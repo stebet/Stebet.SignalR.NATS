@@ -53,17 +53,6 @@ internal sealed class ClientResultsManager : IInvocationBinder
         return tcs.Task;
     }
 
-    public void AddInvocation(string invocationId, (Type Type, string ConnectionId, object Tcs, Action<object, CompletionMessage> Complete) invocationInfo)
-    {
-        var result = _pendingInvocations.TryAdd(invocationId, invocationInfo);
-        Debug.Assert(result);
-        // Should have a 50% chance of happening once every 2.71 quintillion invocations (see UUID in Wikipedia)
-        if (!result)
-        {
-            invocationInfo.Complete(invocationInfo.Tcs, CompletionMessage.WithError(invocationId, "ID collision occurred when using client results. This is likely a bug in SignalR."));
-        }
-    }
-
     public void AbortInvocationsForConnection(string connectionId)
     {
         foreach (KeyValuePair<string, (Type Type, string ConnectionId, object Tcs, Action<object, CompletionMessage> Complete)> item in _pendingInvocations)

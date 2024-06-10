@@ -261,6 +261,7 @@ public class NatsHubLifetimeManager<THub> : HubLifetimeManager<THub> where THub 
             }
             catch (NatsNoRespondersException nre)
             {
+                _clientResultsManager.RemoveInvocation(invocationId);
                 throw new IOException($"Connection '{connectionId}' does not exist.", nre);
             }
             catch

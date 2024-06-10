@@ -26,9 +26,8 @@ public class NatsHubConnectionHandler(ILogger logger, HubConnectionContext conne
                 ? SubscribeToSubject(NatsSubject.GetUserSendSubject(connection.UserIdentifier), ProcessConnectionSendAsync)
                 : Task.CompletedTask
         };
-
         await Task.WhenAll(tasks).ConfigureAwait(false);
-        await Task.Delay(10);
+        await natsConnection.PingAsync().ConfigureAwait(false);
     }
 
     private async Task SubscribeToSubject(string subject, Func<ChannelReader<NatsMsg<NatsMemoryOwner<byte>>>, Task> msgHandler)
@@ -64,7 +63,7 @@ public class NatsHubConnectionHandler(ILogger logger, HubConnectionContext conne
             cancellationToken: connection.ConnectionAborted).ConfigureAwait(false);
         _groupSubs.Add(groupName, groupSubscription);
         _backgroundTasks.Add(ProcessGroupSendAsync(groupSubscription.Msgs));
-        await Task.Delay(10).ConfigureAwait(false);
+        await natsConnection.PingAsync().ConfigureAwait(false);
     }
 
     public async Task UnsubscribeFromGroupAsync(string groupName)
