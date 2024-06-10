@@ -6,7 +6,12 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    services:
+      redis:
+        # Docker Hub image
+        image: nats
+        ports:
+          - 4222:4222
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET
