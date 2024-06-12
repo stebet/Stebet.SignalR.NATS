@@ -1,9 +1,9 @@
-using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.AspNetCore.SignalR;
+
 using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
 using NATS.Client.Core;
 
 namespace Stebet.SignalR.NATS;
@@ -17,10 +17,11 @@ public class NatsHubLifetimeManager<THub> : HubLifetimeManager<THub> where THub 
     private readonly ClientResultsManager _clientResultsManager;
     private readonly HubConnectionStore _connections = new();
 
-    public NatsHubLifetimeManager(ILogger<NatsHubLifetimeManager<THub>> logger,
+    public NatsHubLifetimeManager(IOptions<NatsBackplaneOptions> options, ILogger<NatsHubLifetimeManager<THub>> logger,
         INatsConnection natsConnection, IHubProtocolResolver protocolResolver, IOptions<HubOptions> globalHubOptions,
         IOptions<HubOptions<THub>> hubOptions)
     {
+        NatsSubject.Prefix = options.Value.Prefix;
         _logger = logger;
         _natsConnection = natsConnection;
         _protocolResolver = protocolResolver;
@@ -60,8 +61,11 @@ public class NatsHubLifetimeManager<THub> : HubLifetimeManager<THub> where THub 
     private void HandleInvokeResult(NatsMemoryOwner<byte> memory)
     {
         (string connectionId, SerializedHubMessage serializedHubMessage) = memory.ReadSerializedHubMessageWithConnectionId();
+        _logger.LogDebug("Handling Invoke Result from {ConnectionId}", connectionId);
         if (TryDeserializeMessage(serializedHubMessage, out HubMessage? hubMessage) && hubMessage is CompletionMessage completionMessage)
         {
+            _logger.LogDebug("Successfully deserialized CompletionMessage {InvocationId} with result {Result}", completionMessage.InvocationId, completionMessage.Result);
+
             _clientResultsManager.TryCompleteResult(connectionId, completionMessage);
         }
         else
@@ -83,7 +87,7 @@ public class NatsHubLifetimeManager<THub> : HubLifetimeManager<THub> where THub 
     {
         var cts = CancellationTokenSource.CreateLinkedTokenSource(connection.ConnectionAborted);
         connection.SetCancellationTokenSource(cts);
-        var handler = new NatsHubConnectionHandler(_logger, connection, _natsConnection);
+        var handler = new NatsHubConnectionHandler(_logger, connection, _natsConnection, _clientResultsManager);
         await handler.StartConnectionHandler().ConfigureAwait(false);
         connection.SetConnectionHandler(handler);
         _connections.Add(connection);
@@ -236,53 +240,64 @@ public class NatsHubLifetimeManager<THub> : HubLifetimeManager<THub> where THub 
     public override async Task<T> InvokeConnectionAsync<T>(string connectionId, string methodName, object?[] args,
         CancellationToken cancellationToken)
     {
-        string invocationId = Guid.NewGuid().ToString();
+        string invocationId = GenerateInvocationId();
         var invocationMessage = new InvocationMessage(invocationId, methodName, args);
         HubConnectionContext? conn = _connections[connectionId];
-        Task<T> task = _clientResultsManager.AddInvocation<T>(connectionId, invocationId,
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, conn?.ConnectionAborted ?? default).Token);
 
         if (conn is not null)
         {
+            // This is a local connection so let's go the Write and SetConnectionResultAsync dance through a TCS
+            Task<T> task = _clientResultsManager.AddInvocation<T>(connectionId, invocationId, CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, conn.ConnectionAborted).Token);
             _logger.LogDebug("Invoking {Method} on local connection {ConnectionId}", methodName, connectionId);
             await conn.WriteAsync(new SerializedHubMessage(invocationMessage.SerializeMessage(_clientResultsManager.HubProtocols)), cancellationToken)
                 .ConfigureAwait(false);
-        }
-        else
-        {
-            _logger.LogDebug("Invoking {Method} on remote connection {ConnectionId}", methodName, connectionId);
-            var bufferWriter = new NatsBufferWriter<byte>();
-            bufferWriter.WriteMessage(invocationMessage, _clientResultsManager.HubProtocols);
             try
             {
-                await _natsConnection.RequestAsync<NatsBufferWriter<byte>, bool>(NatsSubject.GetConnectionInvokeSubject(connectionId), bufferWriter,
-                        cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            catch (NatsNoRespondersException nre)
-            {
-                _clientResultsManager.RemoveInvocation(invocationId);
-                throw new IOException($"Connection '{connectionId}' does not exist.", nre);
+                return await task.ConfigureAwait(false);
             }
             catch
             {
-                _clientResultsManager.RemoveInvocation(invocationId);
+                // ConnectionAborted will trigger a generic "Canceled" exception from the task, let's convert it into a more specific message.
+                if (conn.ConnectionAborted.IsCancellationRequested == true)
+                {
+                    throw new IOException($"Connection '{connectionId}' disconnected.");
+                }
+
+                throw;
             }
         }
-
-        try
+        else
         {
-            return await task.ConfigureAwait(false);
-        }
-        catch
-        {
-            // ConnectionAborted will trigger a generic "Canceled" exception from the task, let's convert it into a more specific message.
-            if (conn?.ConnectionAborted.IsCancellationRequested == true)
+            // This is a remote connection so let's do a NATS request which should do the local connection dance on a remote server
+            _logger.LogDebug("Invoking {Method} on remote connection {ConnectionId}", methodName, connectionId);
+            var bufferWriter = new NatsBufferWriter<byte>();
+            bufferWriter.WriteMessageWithInvocationId(invocationMessage, _clientResultsManager.HubProtocols, invocationId);
+            try
             {
-                throw new IOException($"Connection '{connectionId}' disconnected.");
-            }
+                NatsMsg<NatsMemoryOwner<byte>> result = await _natsConnection.RequestAsync<NatsBufferWriter<byte>, NatsMemoryOwner<byte>>(NatsSubject.GetConnectionInvokeSubject(connectionId), bufferWriter,
+                        cancellationToken: cancellationToken);
+                using NatsMemoryOwner<byte> memoryOwner = result.Data;
+                (string receivedConnectionId, SerializedHubMessage serializedHubMessage) = memoryOwner.ReadSerializedHubMessageWithConnectionId();
+                _logger.LogDebug("Handling Invoke Result from {ConnectionId}", connectionId);
+                if (TryDeserializeMessage<T>(serializedHubMessage, out HubMessage? hubMessage) && hubMessage is CompletionMessage completionMessage)
+                {
+                    _logger.LogDebug("Successfully deserialized CompletionMessage {InvocationId} with result {Result}", completionMessage.InvocationId, completionMessage.Result);
+                    if (completionMessage.HasResult)
+                    {
+                        return (T)completionMessage.Result!;
+                    }
+                    else
+                    {
+                        throw new HubException(completionMessage.Error);
+                    }
+                }
 
-            throw;
+                throw new HubException($"Unable to deserialize CompletionMessage for invocation {invocationId} on connection {connectionId}");
+            }
+            catch (NatsNoRespondersException nre)
+            {
+                throw new IOException($"Connection '{connectionId}' does not exist.", nre);
+            }
         }
     }
 
@@ -340,5 +355,39 @@ public class NatsHubLifetimeManager<THub> : HubLifetimeManager<THub> where THub 
 
         hubMessage = null;
         return false;
+    }
+
+    private bool TryDeserializeMessage<T>(SerializedHubMessage message, [NotNullWhen(true)] out HubMessage? hubMessage)
+    {
+        foreach (IHubProtocol protocol in _protocolResolver.AllProtocols)
+        {
+            try
+            {
+                var messagePayload = new ReadOnlySequence<byte>(message.GetSerializedMessage(protocol));
+                if (protocol.TryParseMessage(ref messagePayload, new RemoteInvocationBinder<T>(), out hubMessage))
+                {
+                    return true;
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Can't deserialize message with protocol {Protocol}", protocol.Name);
+            }
+        }
+
+        hubMessage = null;
+        return false;
+    }
+
+    public override bool TryGetReturnType(string invocationId, [NotNullWhen(true)] out Type? type)
+    {
+        return _clientResultsManager.TryGetType(invocationId, out type);
+    }
+
+    private static string GenerateInvocationId()
+    {
+        Span<byte> buffer = stackalloc byte[24];
+        Random.Shared.NextBytes(buffer);
+        return Convert.ToBase64String(buffer);
     }
 }

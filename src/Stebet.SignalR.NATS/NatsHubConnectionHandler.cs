@@ -1,13 +1,14 @@
 using System.Collections.ObjectModel;
 using System.Threading.Channels;
-using MessagePack;
-using Microsoft.AspNetCore.SignalR;
+
+using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Extensions.Logging;
+
 using NATS.Client.Core;
 
 namespace Stebet.SignalR.NATS;
 
-public class NatsHubConnectionHandler(ILogger logger, HubConnectionContext connection, INatsConnection natsConnection)
+internal class NatsHubConnectionHandler(ILogger logger, HubConnectionContext connection, INatsConnection natsConnection, ClientResultsManager resultsManager)
 {
     private readonly List<Task> _backgroundTasks = new();
     private readonly List<INatsSub<NatsMemoryOwner<byte>>> _subs = new();
@@ -83,7 +84,7 @@ public class NatsHubConnectionHandler(ILogger logger, HubConnectionContext conne
                 try
                 {
                     logger.LogDebug("Writing invocation on connection {ConnectionId}", connection.ConnectionId);
-                    await SendHubMessage(message);
+                    await SendInvocationMessage(message).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -185,6 +186,21 @@ public class NatsHubConnectionHandler(ILogger logger, HubConnectionContext conne
         {
             await message.ReplyAsync(true).ConfigureAwait(false);
         }
+    }
+
+    private async Task SendInvocationMessage(NatsMsg<NatsMemoryOwner<byte>> message)
+    {
+        using NatsMemoryOwner<byte> buffer = message.Data;
+        (string invocationId, SerializedHubMessage serializedHubMessage) = buffer.ReadSerializedHubMessageWithInvocationId();
+        resultsManager.AddInvocation(invocationId, (typeof(RawResult), connection.ConnectionId, null!, async (_, completionMessage) =>
+        {
+            logger.LogDebug("Sending invocation result to {ReplyTo}", message.ReplyTo);
+            var buffer = new NatsBufferWriter<byte>();
+            buffer.WriteMessageWithConnectionId(completionMessage, [connection.Protocol], connection.ConnectionId);
+            await message.ReplyAsync(buffer).ConfigureAwait(false);
+        }
+        ));
+        await connection.WriteAsync(serializedHubMessage, CancellationToken.None).ConfigureAwait(false);
     }
 
     private async Task SendHubMessageWithExcludedConnectionIds(NatsMsg<NatsMemoryOwner<byte>> message)

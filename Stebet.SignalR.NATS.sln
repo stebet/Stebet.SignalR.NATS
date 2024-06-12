@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.002.0
@@ -9,17 +8,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{35AFA92E-9EC
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9C5BECE8-B964-4B60-864E-F71CA436005E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stebet.SignalR.NATS.Yarp", "perf\Stebet.SignalR.NATS.Yarp\Stebet.SignalR.NATS.Yarp.csproj", "{C1A9A782-DD39-4801-A37A-52F82BA486F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stebet.SignalR.NATS.Yarp", "perf\Stebet.SignalR.NATS.Yarp\Stebet.SignalR.NATS.Yarp.csproj", "{C1A9A782-DD39-4801-A37A-52F82BA486F1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stebet.SignalR.NATS", "src\Stebet.SignalR.NATS\Stebet.SignalR.NATS.csproj", "{82C6A4A5-AFCE-48DB-882B-ECA9D8C62106}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stebet.SignalR.NATS.Tests", "tests\Stebet.SignalR.NATS.Tests\Stebet.SignalR.NATS.Tests.csproj", "{AFC39AD4-8C22-476B-BEFA-DADDA922C40C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stebet.SignalR.NATS.Tests", "tests\Stebet.SignalR.NATS.Tests\Stebet.SignalR.NATS.Tests.csproj", "{AFC39AD4-8C22-476B-BEFA-DADDA922C40C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{C0569A8B-1F11-4CE5-B581-CA3F61CF0A00}"
 	ProjectSection(SolutionItems) = preProject
 		Directory.Build.props = Directory.Build.props
 		.editorconfig = .editorconfig
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stebet.SignalR.NATS.TestServer", "tests\Stebet.SignalR.NATS.TestServer\Stebet.SignalR.NATS.TestServer.csproj", "{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +40,10 @@ Global
 		{AFC39AD4-8C22-476B-BEFA-DADDA922C40C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AFC39AD4-8C22-476B-BEFA-DADDA922C40C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AFC39AD4-8C22-476B-BEFA-DADDA922C40C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -47,6 +52,7 @@ Global
 		{C1A9A782-DD39-4801-A37A-52F82BA486F1} = {2BFA9A1E-AADB-4877-A424-CCCADA82994A}
 		{82C6A4A5-AFCE-48DB-882B-ECA9D8C62106} = {35AFA92E-9EC3-4459-9BF1-4572288435B8}
 		{AFC39AD4-8C22-476B-BEFA-DADDA922C40C} = {9C5BECE8-B964-4B60-864E-F71CA436005E}
+		{C8658AAD-5F32-4EC4-97F2-D5B2C3190221} = {9C5BECE8-B964-4B60-864E-F71CA436005E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3AFB39B5-733A-44FA-92F6-1559F92778EA}

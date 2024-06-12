@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-      <TargetFramework>net8.0</TargetFramework>
       <RootNamespace>Stebet.SignalR.NATS</RootNamespace>
+      <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     </PropertyGroup>
 
     <ItemGroup>
@@ -10,6 +10,6 @@
 
     <ItemGroup>
       <PackageReference Include="MessagePack" Version="2.5.168" />
-      <PackageReference Include="NATS.Net" Version="2.2.1" />
+      <PackageReference Include="NATS.Net" Version="2.2.2" />
     </ItemGroup>
   </Project>

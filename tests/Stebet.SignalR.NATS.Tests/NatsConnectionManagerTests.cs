@@ -1,8 +1,7 @@
 using System.Threading.Channels;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+
 using NATS.Client.Core;
+
 using Xunit.Abstractions;
 
 namespace Stebet.SignalR.NATS.Tests;

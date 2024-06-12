@@ -1,8 +1,6 @@
-using Microsoft.AspNetCore.SignalR;
-
 namespace Stebet.SignalR.NATS;
 
-public static class HubConnectionContextExtensions
+internal static class HubConnectionContextExtensions
 {
     public static bool IsInGroup(this HubConnectionContext connection, string groupName) =>
         connection.Items.TryGetValue("Groups", out object? groupObject) && groupObject is HashSet<string> groups && groups.Contains(groupName);

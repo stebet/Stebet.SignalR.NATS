@@ -1,6 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using MessagePack;
-using Microsoft.AspNetCore.SignalR;
 
 namespace NATS.Client.Core;
 
@@ -24,6 +22,20 @@ internal static class NatsMemoryOwnerExtensions
         SerializedHubMessage message = reader.ReadSerializedHubMessage();
         return (connectionId, message);
     }
+
+    internal static (string InvocationId, SerializedHubMessage SerializedHubMessage) ReadSerializedHubMessageWithInvocationId(this NatsMemoryOwner<byte> memory)
+    {
+        MessagePackReader reader = new(memory.Memory);
+        string? invocationId = reader.ReadString();
+        if (string.IsNullOrEmpty(invocationId))
+        {
+            throw new InvalidOperationException("Connection ID is missing");
+        }
+
+        SerializedHubMessage message = reader.ReadSerializedHubMessage();
+        return (invocationId, message);
+    }
+
     internal static string ReadString(this NatsMemoryOwner<byte> memory)
     {
         MessagePackReader reader = new(memory.Memory);

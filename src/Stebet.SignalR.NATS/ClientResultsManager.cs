@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.AspNetCore.SignalR;
+
 using Microsoft.AspNetCore.SignalR.Protocol;
 
 namespace Stebet.SignalR.NATS;
@@ -33,7 +33,7 @@ internal sealed class ClientResultsManager : IInvocationBinder
     public Task<T> AddInvocation<T>(string connectionId, string invocationId, CancellationToken cancellationToken)
     {
         var tcs = new TaskCompletionSourceWithCancellation<T>(this, connectionId, invocationId, cancellationToken);
-        var result = _pendingInvocations.TryAdd(invocationId, (typeof(T), connectionId, tcs, static (state, completionMessage) =>
+        bool result = _pendingInvocations.TryAdd(invocationId, (typeof(T), connectionId, tcs, static (state, completionMessage) =>
         {
             var tcs = (TaskCompletionSourceWithCancellation<T>)state;
             if (completionMessage.HasResult)
@@ -53,6 +53,17 @@ internal sealed class ClientResultsManager : IInvocationBinder
         return tcs.Task;
     }
 
+    public void AddInvocation(string invocationId, (Type Type, string ConnectionId, object Tcs, Action<object, CompletionMessage> Complete) invocationInfo)
+    {
+        var result = _pendingInvocations.TryAdd(invocationId, invocationInfo);
+        Debug.Assert(result);
+        // Should have a 50% chance of happening once every 2.71 quintillion invocations (see UUID in Wikipedia)
+        if (!result)
+        {
+            invocationInfo.Complete(invocationInfo.Tcs, CompletionMessage.WithError(invocationId, "ID collision occurred when using client results. This is likely a bug in SignalR."));
+        }
+    }
+
     public void AbortInvocationsForConnection(string connectionId)
     {
         foreach (KeyValuePair<string, (Type Type, string ConnectionId, object Tcs, Action<object, CompletionMessage> Complete)> item in _pendingInvocations)
@@ -66,7 +77,7 @@ internal sealed class ClientResultsManager : IInvocationBinder
 
     public void TryCompleteResult(string connectionId, CompletionMessage message)
     {
-        if (_pendingInvocations.TryGetValue(message.InvocationId!, out var item))
+        if (_pendingInvocations.TryGetValue(message.InvocationId!, out (Type Type, string ConnectionId, object Tcs, Action<object, CompletionMessage> Complete) item))
         {
             if (item.ConnectionId != connectionId)
             {
@@ -91,13 +102,13 @@ internal sealed class ClientResultsManager : IInvocationBinder
 
     public (Type Type, string ConnectionId, object Tcs, Action<object, CompletionMessage> Completion)? RemoveInvocation(string invocationId)
     {
-        _pendingInvocations.TryRemove(invocationId, out var item);
+        _pendingInvocations.TryRemove(invocationId, out (Type Type, string ConnectionId, object Tcs, Action<object, CompletionMessage> Complete) item);
         return item;
     }
 
     public bool TryGetType(string invocationId, [NotNullWhen(true)] out Type? type)
     {
-        if (_pendingInvocations.TryGetValue(invocationId, out var item))
+        if (_pendingInvocations.TryGetValue(invocationId, out (Type Type, string ConnectionId, object Tcs, Action<object, CompletionMessage> Complete) item))
         {
             type = item.Type;
             return true;
@@ -108,7 +119,7 @@ internal sealed class ClientResultsManager : IInvocationBinder
 
     public Type GetReturnType(string invocationId)
     {
-        if (TryGetType(invocationId, out var type))
+        if (TryGetType(invocationId, out Type? type))
         {
             return type;
         }
@@ -129,32 +140,18 @@ internal sealed class ClientResultsManager : IInvocationBinder
 
     // Custom TCS type to avoid the extra allocation that would be introduced if we managed the cancellation separately
     // Also makes it easier to keep track of the CancellationTokenRegistration for disposal
-    internal sealed class TaskCompletionSourceWithCancellation<T> : TaskCompletionSource<T>
+    internal sealed class TaskCompletionSourceWithCancellation<T>(ClientResultsManager clientResultsManager, string connectionId, string invocationId,
+        CancellationToken cancellationToken) : TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously)
     {
-        private readonly ClientResultsManager _clientResultsManager;
-        private readonly string _connectionId;
-        private readonly string _invocationId;
-        private readonly CancellationToken _token;
-
         private CancellationTokenRegistration _tokenRegistration;
-
-        public TaskCompletionSourceWithCancellation(ClientResultsManager clientResultsManager, string connectionId, string invocationId,
-            CancellationToken cancellationToken)
-            : base(TaskCreationOptions.RunContinuationsAsynchronously)
-        {
-            _clientResultsManager = clientResultsManager;
-            _connectionId = connectionId;
-            _invocationId = invocationId;
-            _token = cancellationToken;
-        }
 
         // Needs to be called after adding the completion to the dictionary in order to avoid synchronous completions of the token registration
         // not canceling when the dictionary hasn't been updated yet.
         public void RegisterCancellation()
         {
-            if (_token.CanBeCanceled)
+            if (cancellationToken.CanBeCanceled)
             {
-                _tokenRegistration = _token.UnsafeRegister(static o =>
+                _tokenRegistration = cancellationToken.UnsafeRegister(static o =>
                 {
                     var tcs = (TaskCompletionSourceWithCancellation<T>)o!;
                     tcs.SetCanceled();
@@ -166,7 +163,7 @@ internal sealed class ClientResultsManager : IInvocationBinder
         {
             // TODO: RedisHubLifetimeManager will want to notify the other server (if there is one) about the cancellation
             // so it can clean up state and potentially forward that info to the connection
-            _clientResultsManager.TryCompleteResult(_connectionId, CompletionMessage.WithError(_invocationId, "Invocation canceled by the server."));
+            clientResultsManager.TryCompleteResult(connectionId, CompletionMessage.WithError(invocationId, "Invocation canceled by the server."));
         }
 
         public new void SetResult(T result)

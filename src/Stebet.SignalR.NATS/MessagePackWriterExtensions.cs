@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
-
-namespace MessagePack;
+﻿namespace MessagePack;
 
 public static class MessagePackWriterExtensions
 {

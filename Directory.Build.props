@@ -1,5 +1,6 @@
 <Project>
   <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <DebugSymbols>true</DebugSymbols>
@@ -11,5 +12,11 @@
 
   <ItemGroup>
     <PackageReference Include="DotNet.ReproducibleBuilds.Isolated" Version="1.1.1" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="MessagePack" />
+    <Using Include="System.Buffers" />
+    <Using Include="Microsoft.AspNetCore.SignalR "/>
   </ItemGroup>
 </Project>

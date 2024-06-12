@@ -15,6 +15,4 @@ public static class HubMessageExtensions
 
         return list;
     }
-
-
 }

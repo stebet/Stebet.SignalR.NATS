@@ -1,5 +1,4 @@
-﻿using MessagePack;
-using Microsoft.AspNetCore.SignalR.Protocol;
+﻿using Microsoft.AspNetCore.SignalR.Protocol;
 
 namespace System.Buffers;
 
@@ -18,6 +17,15 @@ public static class IBufferWriterExtensions
     {
         MessagePackWriter writer = new(bufferWriter);
         writer.Write(connectionId);
+        writer.WriteSerializedMessages(message.SerializeMessage(hubProtocols));
+        writer.Flush();
+    }
+
+    internal static void WriteMessageWithInvocationId<T>(this IBufferWriter<byte> bufferWriter, T message, IReadOnlyList<IHubProtocol> hubProtocols, string invocationId)
+        where T : HubMessage
+    {
+        MessagePackWriter writer = new(bufferWriter);
+        writer.Write(invocationId);
         writer.WriteSerializedMessages(message.SerializeMessage(hubProtocols));
         writer.Flush();
     }
