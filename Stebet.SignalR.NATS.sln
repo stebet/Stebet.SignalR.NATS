@@ -16,11 +16,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stebet.SignalR.NATS.Tests",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{C0569A8B-1F11-4CE5-B581-CA3F61CF0A00}"
 	ProjectSection(SolutionItems) = preProject
+		Default.runsettings = Default.runsettings
 		Directory.Build.props = Directory.Build.props
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stebet.SignalR.NATS.TestServer", "tests\Stebet.SignalR.NATS.TestServer\Stebet.SignalR.NATS.TestServer.csproj", "{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stebet.SignalR.NATS.TestServer", "tests\Stebet.SignalR.NATS.TestServer\Stebet.SignalR.NATS.TestServer.csproj", "{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
