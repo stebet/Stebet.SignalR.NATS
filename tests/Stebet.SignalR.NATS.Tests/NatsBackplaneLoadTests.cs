@@ -25,8 +25,8 @@ public class NatsBackplaneLoadTests : IClassFixture<SignalRWebApplicationFactory
     }
 
 #pragma warning disable xUnit1004 // Test methods should not be skipped
-    //[Theory(Skip="Just run when doing a load test")]
-    [Theory]
+    [Theory(Skip="Just run when doing a load test")]
+    //[Theory]
 #pragma warning restore xUnit1004 // Test methods should not be skipped
     [InlineData(100)]
     [InlineData(1000)]
