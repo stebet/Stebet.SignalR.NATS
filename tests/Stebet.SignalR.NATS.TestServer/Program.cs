@@ -17,7 +17,8 @@ builder.Services
     .AddSingleton<INatsConnectionPool, NatsConnectionPool>()
     .AddTransient(provider => provider.GetRequiredService<INatsConnectionPool>().GetConnection())
     .AddSignalR()
-    .AddNats();
+    .AddStackExchangeRedis("localhost");
+    //.AddNats();
 WebApplication app = builder.Build();
 app.UseWebSockets();
 app.MapHub<EchoHub>("/echo");

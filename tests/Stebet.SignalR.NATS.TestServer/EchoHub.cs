@@ -14,7 +14,7 @@
 
         public async Task<string> SendToClient(string message, string connectionId)
         {
-            var response = await Clients.Client(connectionId).InvokeAsync<string>("Hello", message, Context.ConnectionId, CancellationToken.None); ;
+            string response = await Clients.Client(connectionId).InvokeAsync<string>("Hello", message, Context.ConnectionId, CancellationToken.None); ;
             _logger.LogInformation("Received response {response}", response);
             return response;
         }

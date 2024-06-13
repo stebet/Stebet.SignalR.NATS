@@ -9,7 +9,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <InternalsVisibleTo Include="$(AssemblyName).Tests" />
       <PackageReference Include="MessagePack" Version="2.5.168" />
-      <PackageReference Include="NATS.Net" Version="2.2.2" />
+      <PackageReference Include="NATS.Net" Version="2.2.3" />
+      <PackageReference Include="Ulid" Version="1.3.3" />
     </ItemGroup>
   </Project>

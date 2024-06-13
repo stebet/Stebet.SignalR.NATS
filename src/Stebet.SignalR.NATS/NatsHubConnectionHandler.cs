@@ -8,7 +8,7 @@ using NATS.Client.Core;
 
 namespace Stebet.SignalR.NATS;
 
-internal class NatsHubConnectionHandler(ILogger logger, HubConnectionContext connection, INatsConnection natsConnection, ClientResultsManager resultsManager)
+internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionContext connection, INatsConnection natsConnection, ClientResultsManager<THub> resultsManager) where THub : Hub
 {
     private readonly List<Task> _backgroundTasks = new();
     private readonly List<INatsSub<NatsMemoryOwner<byte>>> _subs = new();
@@ -37,6 +37,7 @@ internal class NatsHubConnectionHandler(ILogger logger, HubConnectionContext con
                     cancellationToken: connection.ConnectionAborted).ConfigureAwait(false);
         _subs.Add(natsSubscription);
         _backgroundTasks.Add(msgHandler(natsSubscription.Msgs));
+        await natsConnection.PingAsync().ConfigureAwait(false);
     }
 
     public async Task StopConnectionHandler()
@@ -139,11 +140,11 @@ internal class NatsHubConnectionHandler(ILogger logger, HubConnectionContext con
                     string groupName = buffer.ReadString();
                     if (message.Subject.EndsWith(".add"))
                     {
-                        await connection.AddToGroupAsync(groupName).ConfigureAwait(false);
+                        await connection.AddToGroupAsync<THub>(groupName).ConfigureAwait(false);
                     }
                     else if (message.Subject.EndsWith(".remove"))
                     {
-                        await connection.RemoveFromGroupAsync(groupName).ConfigureAwait(false);
+                        await connection.RemoveFromGroupAsync<THub>(groupName).ConfigureAwait(false);
                     }
 
                     await message.ReplyAsync(true, cancellationToken: CancellationToken.None).ConfigureAwait(false);

@@ -3,20 +3,21 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.AspNetCore.SignalR.Protocol;
+using Microsoft.Extensions.Options;
 
 namespace Stebet.SignalR.NATS;
 
 // Common type used by our HubLifetimeManager implementations to manage client results.
 // Handles cancellation, cleanup, and completion, so any bugs or improvements can be made in a single place
-internal sealed class ClientResultsManager : IInvocationBinder
+internal sealed class ClientResultsManager<THub> : IInvocationBinder where THub : Hub
 {
     private readonly ConcurrentDictionary<string, (Type Type, string ConnectionId, object Tcs, Action<object, CompletionMessage> Complete)> _pendingInvocations = new();
 
     internal IReadOnlyList<IHubProtocol> HubProtocols { get; }
 
-    public ClientResultsManager(IHubProtocolResolver hubProtocolResolver, IList<string>? globalSupportedProtocols, IList<string>? hubSupportedProtocols)
+    public ClientResultsManager(IHubProtocolResolver hubProtocolResolver, IOptions<HubOptions> globalHubOptions, IOptions<HubOptions<THub>> hubOptions)
     {
-        IList<string> supportedProtocols = hubSupportedProtocols ?? globalSupportedProtocols ?? Array.Empty<string>();
+        IList<string> supportedProtocols = hubOptions.Value.SupportedProtocols ?? globalHubOptions.Value.SupportedProtocols ?? Array.Empty<string>();
         var hubProtocols = new List<IHubProtocol>(supportedProtocols.Count);
         foreach (string protocolName in supportedProtocols)
         {
@@ -55,7 +56,7 @@ internal sealed class ClientResultsManager : IInvocationBinder
 
     public void AddInvocation(string invocationId, (Type Type, string ConnectionId, object Tcs, Action<object, CompletionMessage> Complete) invocationInfo)
     {
-        var result = _pendingInvocations.TryAdd(invocationId, invocationInfo);
+        bool result = _pendingInvocations.TryAdd(invocationId, invocationInfo);
         Debug.Assert(result);
         // Should have a 50% chance of happening once every 2.71 quintillion invocations (see UUID in Wikipedia)
         if (!result)
@@ -140,7 +141,7 @@ internal sealed class ClientResultsManager : IInvocationBinder
 
     // Custom TCS type to avoid the extra allocation that would be introduced if we managed the cancellation separately
     // Also makes it easier to keep track of the CancellationTokenRegistration for disposal
-    internal sealed class TaskCompletionSourceWithCancellation<T>(ClientResultsManager clientResultsManager, string connectionId, string invocationId,
+    internal sealed class TaskCompletionSourceWithCancellation<T>(ClientResultsManager<THub> clientResultsManager, string connectionId, string invocationId,
         CancellationToken cancellationToken) : TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously)
     {
         private CancellationTokenRegistration _tokenRegistration;

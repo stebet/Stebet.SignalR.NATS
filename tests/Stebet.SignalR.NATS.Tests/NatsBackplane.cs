@@ -12,6 +12,7 @@ public class NatsBackplane(IServiceCollection services)
             services.Add(descriptor);
         }
 
+        services.AddSingleton(typeof(ClientResultsManager<>), typeof(ClientResultsManager<>));
         services.AddSingleton(typeof(HubLifetimeManager<>), typeof(NatsHubLifetimeManager<>));
         ServiceProvider serviceProvider = services.BuildServiceProvider();
         return serviceProvider;

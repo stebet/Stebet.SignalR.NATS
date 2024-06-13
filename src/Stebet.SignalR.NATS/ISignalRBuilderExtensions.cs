@@ -5,13 +5,10 @@ namespace Microsoft.AspNetCore.SignalR;
 
 public static class ISignalRBuilderExtensions
 {
-    public static ISignalRServerBuilder AddNats(this ISignalRServerBuilder builder, Action<NatsBackplaneOptions>? configure = default)
+    public static ISignalRServerBuilder AddNats(this ISignalRServerBuilder builder, string natsSubjectPrefix = "signalr.nats")
     {
-        builder.Services.Configure((NatsBackplaneOptions options) =>
-        {
-            configure?.Invoke(options);
-        });
-
+        NatsSubject.Prefix = natsSubjectPrefix;
+        builder.Services.AddSingleton(typeof(ClientResultsManager<>), typeof(ClientResultsManager<>));
         builder.Services.AddSingleton(typeof(HubLifetimeManager<>), typeof(NatsHubLifetimeManager<>));
         return builder;
     }
