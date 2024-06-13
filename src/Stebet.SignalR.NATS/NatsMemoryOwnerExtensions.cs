@@ -14,11 +14,7 @@ internal static class NatsMemoryOwnerExtensions
     {
         MessagePackReader reader = new(memory.Memory);
         string? connectionId = reader.ReadString();
-        if (string.IsNullOrEmpty(connectionId))
-        {
-            throw new InvalidOperationException("Connection ID is missing");
-        }
-
+        ArgumentException.ThrowIfNullOrEmpty(connectionId, nameof(connectionId));
         SerializedHubMessage message = reader.ReadSerializedHubMessage();
         return (connectionId, message);
     }
@@ -27,11 +23,7 @@ internal static class NatsMemoryOwnerExtensions
     {
         MessagePackReader reader = new(memory.Memory);
         string? invocationId = reader.ReadString();
-        if (string.IsNullOrEmpty(invocationId))
-        {
-            throw new InvalidOperationException("Connection ID is missing");
-        }
-
+        ArgumentException.ThrowIfNullOrEmpty(invocationId, nameof(invocationId));
         SerializedHubMessage message = reader.ReadSerializedHubMessage();
         return (invocationId, message);
     }
@@ -40,11 +32,7 @@ internal static class NatsMemoryOwnerExtensions
     {
         MessagePackReader reader = new(memory.Memory);
         string? stringVal = reader.ReadString();
-        if (string.IsNullOrEmpty(stringVal))
-        {
-            throw new InvalidOperationException("String is missing");
-        }
-
+        ArgumentException.ThrowIfNullOrEmpty(stringVal, nameof(stringVal));
         return stringVal;
     }
 
@@ -60,11 +48,7 @@ internal static class NatsMemoryOwnerExtensions
     {
         MessagePackReader messageData = new(memory.Memory);
         string? groupName = messageData.ReadString();
-        if (string.IsNullOrEmpty(groupName))
-        {
-            throw new InvalidOperationException("Group name is missing");
-        }
-
+        ArgumentException.ThrowIfNullOrEmpty(groupName, nameof(groupName));
         ReadOnlyCollection<string> excludedConnections = messageData.ReadStringArray();
         SerializedHubMessage serializedHubMessage = messageData.ReadSerializedHubMessage();
         return (groupName, excludedConnections, serializedHubMessage);

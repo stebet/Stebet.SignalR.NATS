@@ -124,6 +124,7 @@ internal sealed class ClientResultsManager<THub> : IInvocationBinder where THub 
         {
             return type;
         }
+
         throw new InvalidOperationException($"Invocation ID '{invocationId}' is not associated with a pending client result.");
     }
 

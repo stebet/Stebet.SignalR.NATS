@@ -1,5 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 
+using Microsoft.AspNetCore.SignalR.Protocol;
+
 namespace MessagePack;
 
 internal static class MessagePackReaderExtensions
@@ -20,11 +22,7 @@ internal static class MessagePackReaderExtensions
     {
         // Let's read the protocol name
         string? protocolName = reader.ReadString();
-        if (string.IsNullOrEmpty(protocolName))
-        {
-            throw new InvalidOperationException("Protocol name is missing");
-        }
-
+        ArgumentException.ThrowIfNullOrEmpty(protocolName, nameof(protocolName));
         ReadOnlySequence<byte>? bytes = reader.ReadBytes();
         return new SerializedMessage(protocolName, bytes.HasValue ? bytes.Value.ToArray() : []);
     }
@@ -36,11 +34,7 @@ internal static class MessagePackReaderExtensions
         for (int i = 0; i < stringCount; i++)
         {
             string? readString = reader.ReadString();
-            if (string.IsNullOrEmpty(readString))
-            {
-                throw new InvalidOperationException("String is missing");
-            }
-
+            ArgumentException.ThrowIfNullOrEmpty(readString, nameof(readString));
             strings.Add(readString);
         }
 
