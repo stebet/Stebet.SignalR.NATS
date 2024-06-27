@@ -2,7 +2,6 @@
   <PropertyGroup>
     <IsPublishable>true</IsPublishable>
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
-    <PublishContainer>true</PublishContainer>
     <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled</ContainerBaseImage>
   </PropertyGroup>
   <ItemGroup>

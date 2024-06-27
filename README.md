@@ -11,7 +11,7 @@ For integration tests:
 - [NATS Server](https://nats.io/download/) running on localhost:4222 to run integration tests. For ease of use you can run it via. Docker by running `docker run -p 4222:4222 -p 8222:8222 --name nats -d nats:latest` in your terminal.
 
 For load tests:
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) to run the load tests in a containerized environment)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) to run the load tests in a containerized environment
 
 ## Building the Solution
 
@@ -28,7 +28,7 @@ This solution includes some integration tests. To run them, follow these steps:
 ## Running Load Tests
 There are also load tests included in the solution. To run them, follow these steps:
 1. Make sure you are in the root directory of the repository
-2. Publish the solution by running `dotnet publish -c Release`.
+2. Publish the solution by running `dotnet publish -c Release --os linux -t:PublishContainer`.
 3. Start the docker compose file by running `docker compose -f .\docker-compose-nats.yml -p signalr-nats up -d`.
     * Note: There is also a Docker Compose file to start the Redis backplane for comparison purposes. You can start it by running `docker compose -f .\docker-compose-redis.yml -p signalr-redis up -d`.
 4. Run the performance tests by running `dotnet run -c Release --project .\perf\Stebet.SignalR.NATS.LoadTest\Stebet.SignalR.NATS.LoadTest.csproj`.
