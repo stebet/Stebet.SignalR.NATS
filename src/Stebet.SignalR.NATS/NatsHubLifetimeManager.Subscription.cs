@@ -27,6 +27,20 @@ namespace Stebet.SignalR.NATS
                             HandleInvokeResult(messageDataOwner);
                             await message.ReplyAsync(true, cancellationToken: token).ConfigureAwait(false);
                         }
+                        else if (message.Subject == NatsSubject.AllConnectionsSendSubject)
+                        {
+                            var tasks = new List<Task>();
+                            (SortedSet<string> excludedConnections, SerializedHubMessage serializedHubMessage) = messageDataOwner.ReadSerializedHubMessageWithExcludedConnectionIds();
+                            foreach (var connection in _connections)
+                            {
+                                if (!excludedConnections.Contains(connection.ConnectionId))
+                                {
+                                    tasks.Add(connection.WriteAsync(serializedHubMessage, CancellationToken.None).AsTask());
+                                }
+                            }
+
+                            await Task.WhenAll(tasks).ConfigureAwait(false);
+                        }
                     }
                     catch (Exception e)
                     {

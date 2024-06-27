@@ -20,7 +20,6 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
         {
             SubscribeToSubject(
                     NatsSubject.GetConnectionInvokeSubject(connection.ConnectionId), ProcessConnectionInvokeAndResultAsync),
-            SubscribeToSubject(NatsSubject.AllConnectionsSendSubject, ProcessConnectionSendWithExcludedConnectionIdsAsync),
             SubscribeToSubject(NatsSubject.GetConnectionSendSubject(connection.ConnectionId), ProcessConnectionSendAsync),
             SubscribeToSubject(NatsSubject.GetConnectionGroupWildcardSubject(connection.ConnectionId), ProcessGroupOperationAsync),
             connection.UserIdentifier is not null
@@ -112,23 +111,6 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
             }).ConfigureAwait(false);
     }
 
-    private async Task ProcessConnectionSendWithExcludedConnectionIdsAsync(ChannelReader<NatsMsg<NatsMemoryOwner<byte>>> channel)
-    {
-        await Parallel.ForEachAsync(channel.ReadAllAsync(CancellationToken.None),
-            Helpers.DefaultParallelOptions, async (message, _) =>
-            {
-                try
-                {
-                    logger.LogDebug("Sending message on connection {ConnectionId}", connection.ConnectionId);
-                    await SendHubMessageWithExcludedConnectionIds(message).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    logger.LogError(e, "Error processing message");
-                }
-            }).ConfigureAwait(false);
-    }
-
     private async Task ProcessGroupOperationAsync(ChannelReader<NatsMsg<NatsMemoryOwner<byte>>> channel)
     {
         await Parallel.ForEachAsync(channel.ReadAllAsync(CancellationToken.None),
@@ -164,7 +146,7 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
                 try
                 {
                     using NatsMemoryOwner<byte> buffer = message.Data;
-                    (string groupName, ReadOnlyCollection<string> excludedConnections, SerializedHubMessage serializedHubMessage) = buffer.ReadSerializedHubMessageWithExcludedConnectionIdsAndGroupName();
+                    (string groupName, SortedSet<string> excludedConnections, SerializedHubMessage serializedHubMessage) = buffer.ReadSerializedHubMessageWithExcludedConnectionIdsAndGroupName();
                     if (connection.IsInGroup(groupName) && !excludedConnections.Contains(connection.ConnectionId))
                     {
                         logger.LogDebug("Sending message for group {GroupName} on connection {ConnectionId}", groupName, connection.ConnectionId);
@@ -207,7 +189,7 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
     private async Task SendHubMessageWithExcludedConnectionIds(NatsMsg<NatsMemoryOwner<byte>> message)
     {
         using NatsMemoryOwner<byte> buffer = message.Data;
-        (ReadOnlyCollection<string> excludedConnections, SerializedHubMessage serializedHubMessage) = buffer.ReadSerializedHubMessageWithExcludedConnectionIds();
+        (SortedSet<string> excludedConnections, SerializedHubMessage serializedHubMessage) = buffer.ReadSerializedHubMessageWithExcludedConnectionIds();
         if (!excludedConnections.Contains(connection.ConnectionId))
         {
             await connection.WriteAsync(serializedHubMessage, CancellationToken.None).ConfigureAwait(false);

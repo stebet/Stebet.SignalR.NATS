@@ -36,20 +36,20 @@ internal static class NatsMemoryOwnerExtensions
         return stringVal;
     }
 
-    internal static (ReadOnlyCollection<string> ExcludedConnectionIds, SerializedHubMessage SerializedHubMessage) ReadSerializedHubMessageWithExcludedConnectionIds(this NatsMemoryOwner<byte> memory)
+    internal static (SortedSet<string> ExcludedConnectionIds, SerializedHubMessage SerializedHubMessage) ReadSerializedHubMessageWithExcludedConnectionIds(this NatsMemoryOwner<byte> memory)
     {
         MessagePackReader messageData = new(memory.Memory);
-        ReadOnlyCollection<string> excludedConnections = messageData.ReadStringArray();
+        SortedSet<string> excludedConnections = messageData.ReadStringArray();
         SerializedHubMessage serializedHubMessage = messageData.ReadSerializedHubMessage();
         return (excludedConnections, serializedHubMessage);
     }
 
-    internal static (string GroupName, ReadOnlyCollection<string> ExcludedConnectionIds, SerializedHubMessage SerializedHubMessage) ReadSerializedHubMessageWithExcludedConnectionIdsAndGroupName(this NatsMemoryOwner<byte> memory)
+    internal static (string GroupName, SortedSet<string> ExcludedConnectionIds, SerializedHubMessage SerializedHubMessage) ReadSerializedHubMessageWithExcludedConnectionIdsAndGroupName(this NatsMemoryOwner<byte> memory)
     {
         MessagePackReader messageData = new(memory.Memory);
         string? groupName = messageData.ReadString();
         ArgumentException.ThrowIfNullOrEmpty(groupName, nameof(groupName));
-        ReadOnlyCollection<string> excludedConnections = messageData.ReadStringArray();
+        SortedSet<string> excludedConnections = messageData.ReadStringArray();
         SerializedHubMessage serializedHubMessage = messageData.ReadSerializedHubMessage();
         return (groupName, excludedConnections, serializedHubMessage);
     }

@@ -25,10 +25,10 @@ internal static class MessagePackReaderExtensions
         return new SerializedMessage(protocolName, bytes.HasValue ? bytes.Value.ToArray() : []);
     }
 
-    internal static ReadOnlyCollection<string> ReadStringArray(this ref MessagePackReader reader)
+    internal static SortedSet<string> ReadStringArray(this ref MessagePackReader reader)
     {
         int stringCount = reader.ReadArrayHeader();
-        var strings = new List<string>(stringCount);
+        var strings = new SortedSet<string>();
         for (int i = 0; i < stringCount; i++)
         {
             string? readString = reader.ReadString();
@@ -36,7 +36,7 @@ internal static class MessagePackReaderExtensions
             strings.Add(readString);
         }
 
-        return strings.AsReadOnly();
+        return strings;
     }
 
     internal static SerializedHubMessage ReadSerializedHubMessage(this ref MessagePackReader reader)

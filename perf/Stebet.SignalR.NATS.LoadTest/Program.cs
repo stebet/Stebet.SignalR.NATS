@@ -17,7 +17,7 @@ await Parallel.ForAsync(0L, 100000, new ParallelOptions { TaskScheduler = TaskSc
 var timer = Stopwatch.StartNew();
 using CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 int responsesReceived = 0;
-Console.WriteLine("Starting test");
+Console.WriteLine("Starting invoke test");
 try
 {
     await Parallel.ForAsync(0L, Int64.MaxValue, new ParallelOptions { TaskScheduler = TaskScheduler.Default, MaxDegreeOfParallelism = 1024, CancellationToken = cts.Token }, async (_, _) =>
@@ -25,6 +25,42 @@ try
         HubConnection conn1 = _connections[Random.Shared.Next(0, _connections.Count)];
         HubConnection conn2 = _connections[Random.Shared.Next(0, _connections.Count)];
         string response = await conn2.InvokeAsync<string>("SendToClient", message, conn1.ConnectionId);
+        responsesReceived++;
+    });
+}
+catch (TaskCanceledException)
+{
+    Console.WriteLine($"Received {responsesReceived:N0} responses in {timer.ElapsedMilliseconds:N0} (ms), {responsesReceived / (double)timer.Elapsed.TotalSeconds:N0} rps");
+}
+
+timer = Stopwatch.StartNew();
+using CancellationTokenSource cts2 = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+responsesReceived = 0;
+Console.WriteLine("Starting send all test");
+try
+{
+    await Parallel.ForAsync(0L, Int64.MaxValue, new ParallelOptions { TaskScheduler = TaskScheduler.Default, MaxDegreeOfParallelism = 1024, CancellationToken = cts2.Token }, async (_, _) =>
+    {
+        HubConnection conn1 = _connections[Random.Shared.Next(0, _connections.Count)];
+        await conn1.InvokeAsync("SendToAllClients", message);
+        responsesReceived++;
+    });
+}
+catch (TaskCanceledException)
+{
+    Console.WriteLine($"Received {responsesReceived:N0} responses in {timer.ElapsedMilliseconds:N0} (ms), {responsesReceived / (double)timer.Elapsed.TotalSeconds:N0} rps");
+}
+
+timer = Stopwatch.StartNew();
+using CancellationTokenSource cts3 = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+responsesReceived = 0;
+Console.WriteLine("Starting send others test");
+try
+{
+    await Parallel.ForAsync(0L, Int64.MaxValue, new ParallelOptions { TaskScheduler = TaskScheduler.Default, MaxDegreeOfParallelism = 1024, CancellationToken = cts3.Token }, async (_, _) =>
+    {
+        HubConnection conn1 = _connections[Random.Shared.Next(0, _connections.Count)];
+        await conn1.InvokeAsync("SendToOthers", message);
         responsesReceived++;
     });
 }
@@ -53,6 +89,10 @@ async Task InitializeAsync()
         conn.On<string, string, string>("Hello", (message, connectionId) =>
         {
             return $"{conn.ConnectionId} got {message} from {connectionId}";
+        });
+
+        conn.On<string>("Send", (message) =>
+        {
         });
 
         _connections.Add(conn);
