@@ -1,7 +1,5 @@
 ﻿using System.Collections.ObjectModel;
 
-using Microsoft.AspNetCore.SignalR.Protocol;
-
 namespace MessagePack;
 
 internal static class MessagePackReaderExtensions

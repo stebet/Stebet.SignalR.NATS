@@ -1,6 +1,4 @@
-﻿using MessagePack;
-
-using Microsoft.AspNetCore.SignalR.Protocol;
+﻿using Microsoft.AspNetCore.SignalR.Protocol;
 
 using NATS.Client.Core;
 

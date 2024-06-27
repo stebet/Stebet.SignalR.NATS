@@ -19,9 +19,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{C0569A
 		Default.runsettings = Default.runsettings
 		Directory.Build.props = Directory.Build.props
 		.editorconfig = .editorconfig
+		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stebet.SignalR.NATS.TestServer", "tests\Stebet.SignalR.NATS.TestServer\Stebet.SignalR.NATS.TestServer.csproj", "{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stebet.SignalR.NATS.TestServer", "perf\Stebet.SignalR.NATS.TestServer\Stebet.SignalR.NATS.TestServer.csproj", "{709E9B6C-D8DF-4E7C-AB41-EA53D174B75C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stebet.SignalR.NATS.LoadTest", "perf\Stebet.SignalR.NATS.LoadTest\Stebet.SignalR.NATS.LoadTest.csproj", "{F66735A7-5D9E-4D52-9A00-2CDF10C9A654}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +32,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{709E9B6C-D8DF-4E7C-AB41-EA53D174B75C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{709E9B6C-D8DF-4E7C-AB41-EA53D174B75C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{709E9B6C-D8DF-4E7C-AB41-EA53D174B75C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{709E9B6C-D8DF-4E7C-AB41-EA53D174B75C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C1A9A782-DD39-4801-A37A-52F82BA486F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C1A9A782-DD39-4801-A37A-52F82BA486F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1A9A782-DD39-4801-A37A-52F82BA486F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -41,19 +48,20 @@ Global
 		{AFC39AD4-8C22-476B-BEFA-DADDA922C40C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AFC39AD4-8C22-476B-BEFA-DADDA922C40C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AFC39AD4-8C22-476B-BEFA-DADDA922C40C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C8658AAD-5F32-4EC4-97F2-D5B2C3190221}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F66735A7-5D9E-4D52-9A00-2CDF10C9A654}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F66735A7-5D9E-4D52-9A00-2CDF10C9A654}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F66735A7-5D9E-4D52-9A00-2CDF10C9A654}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F66735A7-5D9E-4D52-9A00-2CDF10C9A654}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{709E9B6C-D8DF-4E7C-AB41-EA53D174B75C} = {2BFA9A1E-AADB-4877-A424-CCCADA82994A}
 		{C1A9A782-DD39-4801-A37A-52F82BA486F1} = {2BFA9A1E-AADB-4877-A424-CCCADA82994A}
 		{82C6A4A5-AFCE-48DB-882B-ECA9D8C62106} = {35AFA92E-9EC3-4459-9BF1-4572288435B8}
 		{AFC39AD4-8C22-476B-BEFA-DADDA922C40C} = {9C5BECE8-B964-4B60-864E-F71CA436005E}
-		{C8658AAD-5F32-4EC4-97F2-D5B2C3190221} = {9C5BECE8-B964-4B60-864E-F71CA436005E}
+		{F66735A7-5D9E-4D52-9A00-2CDF10C9A654} = {2BFA9A1E-AADB-4877-A424-CCCADA82994A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3AFB39B5-733A-44FA-92F6-1559F92778EA}

@@ -6,6 +6,12 @@
     <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled</ContainerBaseImage>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Yarp.ReverseProxy" Version="2.1.0" />
+    <InternalsVisibleTo Include="Stebet.SignalR.NATS.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="8.0.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Stebet.SignalR.NATS\Stebet.SignalR.NATS.csproj" />
   </ItemGroup>
 </Project>

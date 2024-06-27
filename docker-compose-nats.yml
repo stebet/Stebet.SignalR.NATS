@@ -1,0 +1,37 @@
+services:
+  nats:
+    image: "nats:latest"
+    networks:
+      - backend
+  server1:
+    image: "stebet-signalr-nats-testserver"
+    environment:
+      - NATS_ENABLED=1
+      - NATS_HOST=nats:4222
+    networks:
+      - backend
+  server2:
+    image: "stebet-signalr-nats-testserver"
+    environment:
+      - NATS_ENABLED=1
+      - NATS_HOST=nats:4222
+    networks:
+      - backend
+  server3:
+    image: "stebet-signalr-nats-testserver"
+    environment:
+      - NATS_ENABLED=1
+      - NATS_HOST=nats:4222
+    networks:
+      - backend
+  yarp:
+    image: "stebet-signalr-nats-yarp"
+    ports:
+      - 5000:8080
+    networks:
+      - backend
+      - default
+
+networks:
+  backend:
+    internal: true

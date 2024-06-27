@@ -1,0 +1,37 @@
+services:
+  redis:
+    image: "redis:latest"
+    networks:
+      - backend
+  server1:
+    image: "stebet-signalr-nats-testserver"
+    environment:
+      - REDIS_ENABLED=1
+      - REDIS_HOST=redis
+    networks:
+      - backend
+  server2:
+    image: "stebet-signalr-nats-testserver"
+    environment:
+      - REDIS_ENABLED=1
+      - REDIS_HOST=redis
+    networks:
+      - backend
+  server3:
+    image: "stebet-signalr-nats-testserver"
+    environment:
+      - REDIS_ENABLED=1
+      - REDIS_HOST=redis
+    networks:
+      - backend
+  yarp:
+    image: "stebet-signalr-nats-yarp"
+    ports:
+      - 5000:8080
+    networks:
+      - backend
+      - default
+
+networks:
+  backend:
+    internal: true
