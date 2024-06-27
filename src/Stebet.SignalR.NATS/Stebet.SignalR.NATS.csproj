@@ -2,6 +2,12 @@
     <PropertyGroup>
       <RootNamespace>Stebet.SignalR.NATS</RootNamespace>
       <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+      <Authors>stebet</Authors>
+      <Description>Stebet.SignalR.NATS is a NuGet package the easily enables the use of NATS as a backplane for SignalR.</Description>
+      <PackageOutputPath>./nupkg</PackageOutputPath>
+      <PackageLicenseExpression>MIT</PackageLicenseExpression>
+      <PackageTags>NATS SignalR</PackageTags>
+      <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
