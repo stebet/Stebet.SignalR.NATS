@@ -1,17 +1,18 @@
 using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.AspNetCore.SignalR.Protocol;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using NATS.Client.Core;
 
 namespace Stebet.SignalR.NATS;
 
-internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManager<THub>> logger,
-    INatsConnection natsConnection, IHubProtocolResolver protocolResolver, ClientResultsManager<THub> clientResultsManager) : HubLifetimeManager<THub> where THub : Hub
+internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManager<THub>> logger, [FromKeyedServices("Stebet.SignalR.NATS")]INatsConnectionPool natsConnectionPool, IHubProtocolResolver protocolResolver, ClientResultsManager<THub> clientResultsManager) : HubLifetimeManager<THub> where THub : Hub
 {
     private bool _started = false;
     private readonly HubConnectionStore _connections = new();
+    private readonly INatsConnection _natsConnection = natsConnectionPool.GetConnection();
 
     public override async Task OnConnectedAsync(HubConnectionContext connection)
     {
@@ -21,7 +22,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
             _started = true;
         }
 
-        var handler = new NatsHubConnectionHandler<THub>(logger, connection, natsConnection, clientResultsManager);
+        var handler = new NatsHubConnectionHandler<THub>(logger, connection, natsConnectionPool.GetConnection(), clientResultsManager);
         await handler.StartConnectionHandler().ConfigureAwait(false);
         connection.SetConnectionHandler(handler);
         _connections.Add(connection);
@@ -33,7 +34,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
         _connections.Remove(connection);
         var bufferWriter = new NatsBufferWriter<byte>();
         bufferWriter.Write(connection.ConnectionId);
-        await natsConnection.PublishAsync(NatsSubject.ConnectionDisconnectedSubject, bufferWriter).ConfigureAwait(false);
+        await _natsConnection.PublishAsync(NatsSubject.ConnectionDisconnectedSubject, bufferWriter).ConfigureAwait(false);
     }
 
     public override Task SendAllAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
@@ -56,7 +57,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
         var invocationMessage = new InvocationMessage(methodName, args);
         var bufferWriter = new NatsBufferWriter<byte>();
         bufferWriter.WriteMessageWithExcludedConnectionIds(invocationMessage, clientResultsManager.HubProtocols, excludedConnectionIds);
-        await natsConnection.PublishAsync(NatsSubject.AllConnectionsSendSubject, bufferWriter, cancellationToken: cancellationToken)
+        await _natsConnection.PublishAsync(NatsSubject.AllConnectionsSendSubject, bufferWriter, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -150,7 +151,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
             LoggerMessages.AddRemoteConnectionToGroup(logger, connectionId, groupName);
             var bufferWriter = new NatsBufferWriter<byte>();
             bufferWriter.Write(groupName);
-            await natsConnection.RequestAsync<NatsBufferWriter<byte>, bool>(NatsSubject.GetConnectionGroupAddSubject(connectionId), bufferWriter, cancellationToken: cancellationToken)
+            await _natsConnection.RequestAsync<NatsBufferWriter<byte>, bool>(NatsSubject.GetConnectionGroupAddSubject(connectionId), bufferWriter, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }
     }
@@ -168,7 +169,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
             LoggerMessages.RemoveRemoteConnectionFromGroup(logger, connectionId, groupName);
             var bufferWriter = new NatsBufferWriter<byte>();
             bufferWriter.Write(groupName);
-            await natsConnection.RequestAsync<NatsBufferWriter<byte>, bool>(NatsSubject.GetConnectionGroupRemoveSubject(connectionId), bufferWriter, cancellationToken: cancellationToken)
+            await _natsConnection.RequestAsync<NatsBufferWriter<byte>, bool>(NatsSubject.GetConnectionGroupRemoveSubject(connectionId), bufferWriter, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }
     }
@@ -176,7 +177,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
     public override async Task<T> InvokeConnectionAsync<T>(string connectionId, string methodName, object?[] args,
         CancellationToken cancellationToken)
     {
-        string invocationId = GenerateInvocationId();
+        string invocationId = Guid.NewGuid().ToString();
         var invocationMessage = new InvocationMessage(invocationId, methodName, args);
         HubConnectionContext? conn = _connections[connectionId];
 
@@ -185,8 +186,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
             // This is a local connection so let's go the Write and SetConnectionResultAsync dance through a TCS
             LoggerMessages.InvokeLocalConnection(logger, methodName, connectionId);
             Task<T> task = clientResultsManager.AddInvocation<T>(connectionId, invocationId, CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, conn.ConnectionAborted).Token);
-            await conn.WriteAsync(new SerializedHubMessage(invocationMessage.SerializeMessage(clientResultsManager.HubProtocols)), cancellationToken)
-                .ConfigureAwait(false);
+            await conn.WriteAsync(invocationMessage, cancellationToken).ConfigureAwait(false);
             try
             {
                 return await task.ConfigureAwait(false);
@@ -210,7 +210,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
             bufferWriter.WriteMessageWithInvocationId(invocationMessage, clientResultsManager.HubProtocols, invocationId);
             try
             {
-                NatsMsg<NatsMemoryOwner<byte>> result = await natsConnection.RequestAsync<NatsBufferWriter<byte>, NatsMemoryOwner<byte>>(NatsSubject.GetConnectionInvokeSubject(connectionId), bufferWriter,
+                NatsMsg<NatsMemoryOwner<byte>> result = await _natsConnection.RequestAsync<NatsBufferWriter<byte>, NatsMemoryOwner<byte>>(NatsSubject.GetConnectionInvokeSubject(connectionId), bufferWriter,
                         cancellationToken: cancellationToken);
                 using NatsMemoryOwner<byte> memoryOwner = result.Data;
                 (string receivedConnectionId, SerializedHubMessage serializedHubMessage) = memoryOwner.ReadSerializedHubMessageWithConnectionId();
@@ -242,7 +242,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
             LoggerMessages.SetResultForRemoteConnection(logger, connectionId);
             var bufferWriter = new NatsBufferWriter<byte>();
             bufferWriter.WriteMessageWithConnectionId(result, clientResultsManager.HubProtocols, connectionId);
-            await natsConnection.RequestAsync<NatsBufferWriter<byte>, bool>(NatsSubject.InvokeResultSubject, bufferWriter).ConfigureAwait(false);
+            await _natsConnection.RequestAsync<NatsBufferWriter<byte>, bool>(NatsSubject.InvokeResultSubject, bufferWriter).ConfigureAwait(false);
         }
     }
 
@@ -251,7 +251,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
     {
         var bufferWriter = new NatsBufferWriter<byte>();
         bufferWriter.WriteMessage(invocationMessage, clientResultsManager.HubProtocols);
-        await natsConnection.PublishAsync(subject, bufferWriter, cancellationToken: cancellationToken)
+        await _natsConnection.PublishAsync(subject, bufferWriter, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -260,7 +260,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
     {
         var bufferWriter = new NatsBufferWriter<byte>();
         bufferWriter.WriteMessageWithExcludedConnectionIdsAndGroupName(invocationMessage, clientResultsManager.HubProtocols, groupName, excludedConnectionIds);
-        await natsConnection.PublishAsync(subject, bufferWriter, cancellationToken: cancellationToken)
+        await _natsConnection.PublishAsync(subject, bufferWriter, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -276,12 +276,12 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
                     return true;
                 }
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
-                LoggerMessages.CantDeserializeMessage(logger, protocol.Name, ex);
             }
         }
 
+        LoggerMessages.CantDeserializeMessage(logger, protocolResolver.AllProtocols);
         hubMessage = null;
         return false;
     }
@@ -298,12 +298,12 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
                     return true;
                 }
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
-                LoggerMessages.CantDeserializeMessage(logger, protocol.Name, ex);
             }
         }
 
+        LoggerMessages.CantDeserializeMessage(logger, protocolResolver.AllProtocols);
         hubMessage = null;
         return false;
     }
@@ -311,10 +311,5 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
     public override bool TryGetReturnType(string invocationId, [NotNullWhen(true)] out Type? type)
     {
         return clientResultsManager.TryGetType(invocationId, out type);
-    }
-
-    private static string GenerateInvocationId()
-    {
-        return Ulid.NewUlid().ToString();
     }
 }

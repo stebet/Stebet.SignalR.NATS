@@ -1,29 +1,52 @@
 services:
-  nats:
-    image: "nats:latest"
+  nats1:
+    image: nats:latest
+    command: "--cluster_name nats-cluster --cluster nats://0.0.0.0:6222 -D"
+    networks:
+      - backend
+  nats2:
+    image: nats:latest
+    command: "--cluster_name nats-cluster --cluster nats://0.0.0.0:6222 --routes=nats://nats1:6222 -D"
+    networks:
+      - backend
+  nats3:
+    image: nats:latest
+    command: "--cluster_name nats-cluster --cluster nats://0.0.0.0:6222 --routes=nats://nats1:6222 -D"
     networks:
       - backend
   server1:
     image: "stebet-signalr-nats-testserver"
     environment:
       - NATS_ENABLED=1
-      - NATS_HOST=nats:4222
+      - NATS_HOST=nats1:4222,nats2:4222,nats3:4222
     networks:
       - backend
+    depends_on:
+      - nats1
+      - nats2
+      - nats3
   server2:
     image: "stebet-signalr-nats-testserver"
     environment:
       - NATS_ENABLED=1
-      - NATS_HOST=nats:4222
+      - NATS_HOST=nats1:4222,nats2:4222,nats3:4222
     networks:
       - backend
+    depends_on:
+      - nats1
+      - nats2
+      - nats3
   server3:
     image: "stebet-signalr-nats-testserver"
     environment:
       - NATS_ENABLED=1
-      - NATS_HOST=nats:4222
+      - NATS_HOST=nats1:4222,nats2:4222,nats3:4222
     networks:
       - backend
+    depends_on:
+      - nats1
+      - nats2
+      - nats3
   yarp:
     image: "stebet-signalr-nats-yarp"
     ports:
@@ -31,6 +54,10 @@ services:
     networks:
       - backend
       - default
+    depends_on:
+      - server1
+      - server2
+      - server3
 
 networks:
   backend:

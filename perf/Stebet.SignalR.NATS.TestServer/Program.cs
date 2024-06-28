@@ -7,19 +7,8 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 if (Environment.GetEnvironmentVariable("NATS_ENABLED") == "1")
 {
     builder.Services
-    .AddTransient(provider => NatsOpts.Default with
-    {
-        LoggerFactory = provider.GetRequiredService<ILoggerFactory>(),
-        Url = Environment.GetEnvironmentVariable("NATS_HOST") ?? $"localhost:4222",
-        RequestTimeout = TimeSpan.FromSeconds(30),
-        SubPendingChannelFullMode = BoundedChannelFullMode.Wait,
-        ConnectTimeout = TimeSpan.FromSeconds(10),
-        Name = $"Stebet.SignalR.NATS.Tests"
-    })
-    .AddSingleton<INatsConnectionPool, NatsConnectionPool>()
-    .AddTransient(provider => provider.GetRequiredService<INatsConnectionPool>().GetConnection())
     .AddSignalR()
-    .AddNats();
+    .AddNats(Environment.GetEnvironmentVariable("NATS_HOST") ?? $"localhost:4222");
 }
 else if (Environment.GetEnvironmentVariable("REDIS_ENABLED") == "1")
 {

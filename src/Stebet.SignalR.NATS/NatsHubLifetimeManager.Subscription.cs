@@ -9,15 +9,15 @@ namespace Stebet.SignalR.NATS
     {
         private async Task StartSubscriptions()
         {
-            INatsSub<NatsMemoryOwner<byte>> sub = await natsConnection.SubscribeCoreAsync<NatsMemoryOwner<byte>>($"{NatsSubject.GlobalSubjectPrefix}.>").ConfigureAwait(false);
-            await natsConnection.PingAsync().ConfigureAwait(false);
+            INatsSub<NatsMemoryOwner<byte>> sub = await _natsConnection.SubscribeCoreAsync<NatsMemoryOwner<byte>>($"{NatsSubject.GlobalSubjectPrefix}.>").ConfigureAwait(false);
+            await _natsConnection.PingAsync().ConfigureAwait(false);
             await Parallel.ForEachAsync(sub.Msgs.ReadAllAsync(), Helpers.DefaultParallelOptions,
                 async (message, token) =>
                 {
                     using NatsMemoryOwner<byte> messageDataOwner = message.Data;
                     try
                     {
-                        logger.LogDebug("Received message {Subject}", message.Subject);
+                        LoggerMessages.ReceivedMessage(logger, message.Subject);
                         if (message.Subject == NatsSubject.ConnectionDisconnectedSubject)
                         {
                             HandleConnectionDisconnected(messageDataOwner);
@@ -33,10 +33,12 @@ namespace Stebet.SignalR.NATS
                             (SortedSet<string> excludedConnections, SerializedHubMessage serializedHubMessage) = messageDataOwner.ReadSerializedHubMessageWithExcludedConnectionIds();
                             foreach (var connection in _connections)
                             {
-                                if (!excludedConnections.Contains(connection.ConnectionId))
+                                if (excludedConnections.Count > 0 && excludedConnections.Contains(connection.ConnectionId))
                                 {
-                                    tasks.Add(connection.WriteAsync(serializedHubMessage, CancellationToken.None).AsTask());
+                                    continue;
                                 }
+
+                                tasks.Add(connection.WriteAsync(serializedHubMessage, CancellationToken.None).AsTask());
                             }
 
                             await Task.WhenAll(tasks).ConfigureAwait(false);
@@ -44,7 +46,7 @@ namespace Stebet.SignalR.NATS
                     }
                     catch (Exception e)
                     {
-                        logger.LogError(e, "Error processing message {Subject}", message.Subject);
+                        LoggerMessages.ErrorProcessingMessage(logger, message.Subject, e);
                     }
                 }).ConfigureAwait(false);
         }
@@ -52,16 +54,11 @@ namespace Stebet.SignalR.NATS
         private void HandleInvokeResult(NatsMemoryOwner<byte> memory)
         {
             (string connectionId, SerializedHubMessage serializedHubMessage) = memory.ReadSerializedHubMessageWithConnectionId();
-            logger.LogDebug("Handling Invoke Result from {ConnectionId}", connectionId);
+            LoggerMessages.HandleInvokeResult(logger, connectionId);
             if (TryDeserializeMessage(serializedHubMessage, out HubMessage? hubMessage) && hubMessage is CompletionMessage completionMessage)
             {
-                logger.LogDebug("Successfully deserialized CompletionMessage {InvocationId} with result {Result}", completionMessage.InvocationId, completionMessage.Result);
-
+                LoggerMessages.SuccessfullyDeserializedCompletionMessage(logger, completionMessage.InvocationId!, completionMessage.Result);
                 clientResultsManager.TryCompleteResult(connectionId, completionMessage);
-            }
-            else
-            {
-                logger.LogWarning("Failed to deserialize completion message");
             }
         }
 

@@ -83,12 +83,12 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
             {
                 try
                 {
-                    logger.LogDebug("Writing invocation on connection {ConnectionId}", connection.ConnectionId);
+                    LoggerMessages.InvokeLocalConnection(logger, connection.ConnectionId);
                     await SendInvocationMessage(message).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(e, "Error processing message");
+                    LoggerMessages.ErrorProcessingMessage(logger, message.Subject, e);
                 }
 
             }).ConfigureAwait(false);
@@ -101,12 +101,12 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
             {
                 try
                 {
-                    logger.LogDebug("Sending message on connection {ConnectionId}", connection.ConnectionId);
+                    LoggerMessages.SendConnection(logger, connection.ConnectionId);
                     await SendHubMessage(message).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(e, "Error processing message");
+                    LoggerMessages.ErrorProcessingMessage(logger, message.Subject, e);
                 }
             }).ConfigureAwait(false);
     }
@@ -133,7 +133,7 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(e, "Error processing message");
+                    LoggerMessages.ErrorProcessingMessage(logger, message.Subject, e);
                 }
             }).ConfigureAwait(false);
     }
@@ -149,13 +149,13 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
                     (string groupName, SortedSet<string> excludedConnections, SerializedHubMessage serializedHubMessage) = buffer.ReadSerializedHubMessageWithExcludedConnectionIdsAndGroupName();
                     if (connection.IsInGroup(groupName) && !excludedConnections.Contains(connection.ConnectionId))
                     {
-                        logger.LogDebug("Sending message for group {GroupName} on connection {ConnectionId}", groupName, connection.ConnectionId);
+                        LoggerMessages.SendGroup(logger, groupName, connection.ConnectionId);
                         await connection.WriteAsync(serializedHubMessage, CancellationToken.None).ConfigureAwait(false);
                     }
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(e, "Error processing message");
+                    LoggerMessages.ErrorProcessingMessage(logger, message.Subject, e);
                 }
             }).ConfigureAwait(false);
     }
@@ -177,7 +177,7 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
         (string invocationId, SerializedHubMessage serializedHubMessage) = buffer.ReadSerializedHubMessageWithInvocationId();
         resultsManager.AddInvocation(invocationId, (typeof(RawResult), connection.ConnectionId, null!, async (_, completionMessage) =>
         {
-            logger.LogDebug("Sending invocation result to {ReplyTo}", message.ReplyTo);
+            LoggerMessages.SendInvocationResult(logger, message.ReplyTo!);
             var buffer = new NatsBufferWriter<byte>();
             buffer.WriteMessageWithConnectionId(completionMessage, [connection.Protocol], connection.ConnectionId);
             await message.ReplyAsync(buffer).ConfigureAwait(false);
