@@ -16,7 +16,7 @@
 
     <ItemGroup>
       <InternalsVisibleTo Include="$(AssemblyName).Tests" />
-      <PackageReference Include="MessagePack" Version="2.5.171" />
+      <PackageReference Include="MessagePack" Version="2.5.187" />
       <PackageReference Include="NATS.Net" Version="2.3.2" />
     </ItemGroup>
 
