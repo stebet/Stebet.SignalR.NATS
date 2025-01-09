@@ -2,5 +2,5 @@
 
 internal static class Helpers
 {
-    internal static readonly ParallelOptions DefaultParallelOptions = new() { TaskScheduler = TaskScheduler.Default };
+    internal static readonly ParallelOptions s_defaultParallelOptions = new() { TaskScheduler = TaskScheduler.Default };
 }

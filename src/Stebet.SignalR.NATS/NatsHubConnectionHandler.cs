@@ -10,9 +10,9 @@ namespace Stebet.SignalR.NATS;
 
 internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionContext connection, INatsConnection natsConnection, ClientResultsManager<THub> resultsManager) where THub : Hub
 {
-    private readonly List<Task> _backgroundTasks = new();
-    private readonly List<INatsSub<NatsMemoryOwner<byte>>> _subs = new();
-    private readonly Dictionary<string, INatsSub<NatsMemoryOwner<byte>>> _groupSubs = new();
+    private readonly List<Task> _backgroundTasks = [];
+    private readonly List<INatsSub<NatsMemoryOwner<byte>>> _subs = [];
+    private readonly Dictionary<string, INatsSub<NatsMemoryOwner<byte>>> _groupSubs = [];
 
     public async Task StartConnectionHandler()
     {
@@ -76,10 +76,8 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
         }
     }
 
-    private async Task ProcessConnectionInvokeAndResultAsync(ChannelReader<NatsMsg<NatsMemoryOwner<byte>>> channel)
-    {
-        await Parallel.ForEachAsync(channel.ReadAllAsync(CancellationToken.None),
-            Helpers.DefaultParallelOptions, async (message, _) =>
+    private async Task ProcessConnectionInvokeAndResultAsync(ChannelReader<NatsMsg<NatsMemoryOwner<byte>>> channel) => await Parallel.ForEachAsync(channel.ReadAllAsync(CancellationToken.None),
+            Helpers.s_defaultParallelOptions, async (message, _) =>
             {
                 try
                 {
@@ -92,12 +90,9 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
                 }
 
             }).ConfigureAwait(false);
-    }
 
-    private async Task ProcessConnectionSendAsync(ChannelReader<NatsMsg<NatsMemoryOwner<byte>>> channel)
-    {
-        await Parallel.ForEachAsync(channel.ReadAllAsync(CancellationToken.None),
-            Helpers.DefaultParallelOptions, async (message, _) =>
+    private async Task ProcessConnectionSendAsync(ChannelReader<NatsMsg<NatsMemoryOwner<byte>>> channel) => await Parallel.ForEachAsync(channel.ReadAllAsync(CancellationToken.None),
+            Helpers.s_defaultParallelOptions, async (message, _) =>
             {
                 try
                 {
@@ -109,12 +104,9 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
                     LoggerMessages.ErrorProcessingMessage(logger, message.Subject, e);
                 }
             }).ConfigureAwait(false);
-    }
 
-    private async Task ProcessGroupOperationAsync(ChannelReader<NatsMsg<NatsMemoryOwner<byte>>> channel)
-    {
-        await Parallel.ForEachAsync(channel.ReadAllAsync(CancellationToken.None),
-            Helpers.DefaultParallelOptions, async (message, _) =>
+    private async Task ProcessGroupOperationAsync(ChannelReader<NatsMsg<NatsMemoryOwner<byte>>> channel) => await Parallel.ForEachAsync(channel.ReadAllAsync(CancellationToken.None),
+            Helpers.s_defaultParallelOptions, async (message, _) =>
             {
                 try
                 {
@@ -136,12 +128,9 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
                     LoggerMessages.ErrorProcessingMessage(logger, message.Subject, e);
                 }
             }).ConfigureAwait(false);
-    }
 
-    private async Task ProcessGroupSendAsync(ChannelReader<NatsMsg<NatsMemoryOwner<byte>>> channel)
-    {
-        await Parallel.ForEachAsync(channel.ReadAllAsync(CancellationToken.None),
-            Helpers.DefaultParallelOptions, async (message, _) =>
+    private async Task ProcessGroupSendAsync(ChannelReader<NatsMsg<NatsMemoryOwner<byte>>> channel) => await Parallel.ForEachAsync(channel.ReadAllAsync(CancellationToken.None),
+            Helpers.s_defaultParallelOptions, async (message, _) =>
             {
                 try
                 {
@@ -158,7 +147,6 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
                     LoggerMessages.ErrorProcessingMessage(logger, message.Subject, e);
                 }
             }).ConfigureAwait(false);
-    }
 
     private async Task SendHubMessage(NatsMsg<NatsMemoryOwner<byte>> message)
     {
@@ -184,15 +172,5 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
         }
         ));
         await connection.WriteAsync(serializedHubMessage, CancellationToken.None).ConfigureAwait(false);
-    }
-
-    private async Task SendHubMessageWithExcludedConnectionIds(NatsMsg<NatsMemoryOwner<byte>> message)
-    {
-        using NatsMemoryOwner<byte> buffer = message.Data;
-        (SortedSet<string> excludedConnections, SerializedHubMessage serializedHubMessage) = buffer.ReadSerializedHubMessageWithExcludedConnectionIds();
-        if (!excludedConnections.Contains(connection.ConnectionId))
-        {
-            await connection.WriteAsync(serializedHubMessage, CancellationToken.None).ConfigureAwait(false);
-        }
     }
 }

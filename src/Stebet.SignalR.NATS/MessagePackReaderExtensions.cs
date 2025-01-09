@@ -39,8 +39,5 @@ internal static class MessagePackReaderExtensions
         return strings;
     }
 
-    internal static SerializedHubMessage ReadSerializedHubMessage(this ref MessagePackReader reader)
-    {
-        return new SerializedHubMessage(reader.ReadSerializedMessages());
-    }
+    internal static SerializedHubMessage ReadSerializedHubMessage(this ref MessagePackReader reader) => new(reader.ReadSerializedMessages());
 }

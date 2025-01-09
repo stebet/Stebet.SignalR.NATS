@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <DebugSymbols>true</DebugSymbols>
@@ -9,14 +9,12 @@
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <EmbedAllSources>true</EmbedAllSources>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="DotNet.ReproducibleBuilds.Isolated" Version="1.2.4" PrivateAssets="All" />
+    <PackageReference Include="DotNet.ReproducibleBuilds.Isolated" PrivateAssets="All" />
   </ItemGroup>
-
   <ItemGroup>
     <Using Include="MessagePack" />
     <Using Include="System.Buffers" />
-    <Using Include="Microsoft.AspNetCore.SignalR "/>
+    <Using Include="Microsoft.AspNetCore.SignalR " />
   </ItemGroup>
 </Project>

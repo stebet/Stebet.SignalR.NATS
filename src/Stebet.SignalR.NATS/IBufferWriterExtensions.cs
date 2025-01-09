@@ -48,9 +48,9 @@ public static class IBufferWriterExtensions
     {
         MessagePackWriter writer = new(bufferWriter);
         writer.WriteArrayHeader(protocols.Count);
-        foreach (var protocol in protocols)
+        foreach (IHubProtocol protocol in protocols)
         {
-            using NatsBufferWriter<byte> tempBuffer = new NatsBufferWriter<byte>();
+            using var tempBuffer = new NatsBufferWriter<byte>();
             protocol.WriteMessage(message, tempBuffer);
             writer.Write(protocol.Name);
             writer.WriteBinHeader(tempBuffer.WrittenCount);

@@ -21,7 +21,7 @@ internal sealed class ClientResultsManager<THub> : IInvocationBinder where THub 
         var hubProtocols = new List<IHubProtocol>(supportedProtocols.Count);
         foreach (string protocolName in supportedProtocols)
         {
-            IHubProtocol? protocol = hubProtocolResolver.GetProtocol(protocolName, (supportedProtocols as IReadOnlyList<string>) ?? supportedProtocols.ToList());
+            IHubProtocol? protocol = hubProtocolResolver.GetProtocol(protocolName, (supportedProtocols as IReadOnlyList<string>) ?? [.. supportedProtocols]);
             if (protocol != null)
             {
                 hubProtocols.Add(protocol);
@@ -129,16 +129,10 @@ internal sealed class ClientResultsManager<THub> : IInvocationBinder where THub 
     }
 
     // Unused, here to honor the IInvocationBinder interface but should never be called
-    public IReadOnlyList<Type> GetParameterTypes(string methodName)
-    {
-        throw new NotImplementedException();
-    }
+    public IReadOnlyList<Type> GetParameterTypes(string methodName) => throw new NotImplementedException();
 
     // Unused, here to honor the IInvocationBinder interface but should never be called
-    public Type GetStreamItemType(string streamId)
-    {
-        throw new NotImplementedException();
-    }
+    public Type GetStreamItemType(string streamId) => throw new NotImplementedException();
 
     // Custom TCS type to avoid the extra allocation that would be introduced if we managed the cancellation separately
     // Also makes it easier to keep track of the CancellationTokenRegistration for disposal
@@ -161,12 +155,10 @@ internal sealed class ClientResultsManager<THub> : IInvocationBinder where THub 
             }
         }
 
-        public new void SetCanceled()
-        {
+        public new void SetCanceled() =>
             // TODO: RedisHubLifetimeManager will want to notify the other server (if there is one) about the cancellation
             // so it can clean up state and potentially forward that info to the connection
             clientResultsManager.TryCompleteResult(connectionId, CompletionMessage.WithError(invocationId, "Invocation canceled by the server."));
-        }
 
         public new void SetResult(T result)
         {
