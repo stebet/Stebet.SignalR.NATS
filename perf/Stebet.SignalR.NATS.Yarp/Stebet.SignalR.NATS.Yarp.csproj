@@ -5,6 +5,6 @@
     <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled</ContainerBaseImage>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Yarp.ReverseProxy" Version="2.1.0" />
+    <PackageReference Include="Yarp.ReverseProxy" />
   </ItemGroup>
 </Project>

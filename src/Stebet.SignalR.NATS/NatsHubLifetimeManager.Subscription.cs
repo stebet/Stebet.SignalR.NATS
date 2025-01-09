@@ -11,7 +11,7 @@ namespace Stebet.SignalR.NATS
         {
             INatsSub<NatsMemoryOwner<byte>> sub = await _natsConnection.SubscribeCoreAsync<NatsMemoryOwner<byte>>($"{NatsSubject.GlobalSubjectPrefix}.>").ConfigureAwait(false);
             await _natsConnection.PingAsync().ConfigureAwait(false);
-            await Parallel.ForEachAsync(sub.Msgs.ReadAllAsync(), Helpers.DefaultParallelOptions,
+            await Parallel.ForEachAsync(sub.Msgs.ReadAllAsync(), Helpers.s_defaultParallelOptions,
                 async (message, token) =>
                 {
                     using NatsMemoryOwner<byte> messageDataOwner = message.Data;
@@ -31,7 +31,7 @@ namespace Stebet.SignalR.NATS
                         {
                             var tasks = new List<Task>();
                             (SortedSet<string> excludedConnections, SerializedHubMessage serializedHubMessage) = messageDataOwner.ReadSerializedHubMessageWithExcludedConnectionIds();
-                            foreach (var connection in _connections)
+                            foreach (HubConnectionContext connection in _connections)
                             {
                                 if (excludedConnections.Count > 0 && excludedConnections.Contains(connection.ConnectionId))
                                 {

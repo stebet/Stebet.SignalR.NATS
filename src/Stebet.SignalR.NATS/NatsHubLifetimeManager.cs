@@ -37,10 +37,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
         await _natsConnection.PublishAsync(NatsSubject.ConnectionDisconnectedSubject, bufferWriter).ConfigureAwait(false);
     }
 
-    public override Task SendAllAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
-    {
-        return SendAllExceptAsync(methodName, args, [], cancellationToken);
-    }
+    public override Task SendAllAsync(string methodName, object?[] args, CancellationToken cancellationToken = default) => SendAllExceptAsync(methodName, args, [], cancellationToken);
 
     public override async Task SendAllExceptAsync(string methodName, object?[] args, IReadOnlyList<string> excludedConnectionIds,
         CancellationToken cancellationToken = default)
@@ -73,7 +70,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
         HubConnectionContext? conn = _connections[connectionId];
         return conn is not null
             ? conn.WriteAsync(invocationMessage, cancellationToken).AsTask()
-            : SendMessageToSubject(NatsSubject.GetConnectionSendSubject(connectionId), cancellationToken, invocationMessage);
+            : SendMessageToSubject(NatsSubject.GetConnectionSendSubject(connectionId), invocationMessage, cancellationToken);
     }
 
     public override async Task SendConnectionsAsync(IReadOnlyList<string> connectionIds, string methodName, object?[] args,
@@ -90,10 +87,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    public override Task SendGroupAsync(string groupName, string methodName, object?[] args, CancellationToken cancellationToken = default)
-    {
-        return SendGroupsAsync(new[] { groupName }, methodName, args, cancellationToken);
-    }
+    public override Task SendGroupAsync(string groupName, string methodName, object?[] args, CancellationToken cancellationToken = default) => SendGroupsAsync([groupName], methodName, args, cancellationToken);
 
     public override async Task SendGroupsAsync(IReadOnlyList<string> groupNames, string methodName, object?[] args,
         CancellationToken cancellationToken = default)
@@ -103,7 +97,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
         var tasks = new List<Task>(groupNames.Count);
         foreach (string groupName in groupNames)
         {
-            tasks.Add(SendGroupMessageToSubject(NatsSubject.GetGroupSendSubject(groupName), groupName, [], cancellationToken, invocationMessage));
+            tasks.Add(SendGroupMessageToSubject(NatsSubject.GetGroupSendSubject(groupName), groupName, [], invocationMessage, cancellationToken));
         }
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
@@ -114,14 +108,14 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
     {
         LoggerMessages.SendGroupExcept(logger, methodName, groupName, excludedConnectionIds);
         var invocationMessage = new InvocationMessage(methodName, args);
-        await SendGroupMessageToSubject(NatsSubject.GetGroupSendSubject(groupName), groupName, excludedConnectionIds, cancellationToken, invocationMessage)
+        await SendGroupMessageToSubject(NatsSubject.GetGroupSendSubject(groupName), groupName, excludedConnectionIds, invocationMessage, cancellationToken)
             .ConfigureAwait(false);
     }
 
     public override Task SendUserAsync(string userId, string methodName, object?[] args, CancellationToken cancellationToken = default)
     {
         var invocationMessage = new InvocationMessage(methodName, args);
-        return SendMessageToSubject(NatsSubject.GetUserSendSubject(userId), cancellationToken, invocationMessage);
+        return SendMessageToSubject(NatsSubject.GetUserSendSubject(userId), invocationMessage, cancellationToken);
     }
 
     public override async Task SendUsersAsync(IReadOnlyList<string> userIds, string methodName, object?[] args,
@@ -132,7 +126,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
         var tasks = new List<Task>(userIds.Count);
         foreach (string userId in userIds)
         {
-            tasks.Add(SendMessageToSubject(NatsSubject.GetUserSendSubject(userId), cancellationToken, invocationMessage));
+            tasks.Add(SendMessageToSubject(NatsSubject.GetUserSendSubject(userId), invocationMessage, cancellationToken));
         }
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
@@ -246,8 +240,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
         }
     }
 
-    private async Task SendMessageToSubject<T>(string subject, CancellationToken cancellationToken,
-        T invocationMessage) where T : HubMessage
+    private async Task SendMessageToSubject<T>(string subject, T invocationMessage, CancellationToken cancellationToken) where T : HubMessage
     {
         var bufferWriter = new NatsBufferWriter<byte>();
         bufferWriter.WriteMessage(invocationMessage, clientResultsManager.HubProtocols);
@@ -255,8 +248,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
             .ConfigureAwait(false);
     }
 
-    private async Task SendGroupMessageToSubject<T>(string subject, string groupName, IReadOnlyList<string> excludedConnectionIds, CancellationToken cancellationToken,
-        T invocationMessage) where T : HubMessage
+    private async Task SendGroupMessageToSubject<T>(string subject, string groupName, IReadOnlyList<string> excludedConnectionIds, T invocationMessage, CancellationToken cancellationToken) where T : HubMessage
     {
         var bufferWriter = new NatsBufferWriter<byte>();
         bufferWriter.WriteMessageWithExcludedConnectionIdsAndGroupName(invocationMessage, clientResultsManager.HubProtocols, groupName, excludedConnectionIds);
@@ -308,8 +300,5 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
         return false;
     }
 
-    public override bool TryGetReturnType(string invocationId, [NotNullWhen(true)] out Type? type)
-    {
-        return clientResultsManager.TryGetType(invocationId, out type);
-    }
+    public override bool TryGetReturnType(string invocationId, [NotNullWhen(true)] out Type? type) => clientResultsManager.TryGetType(invocationId, out type);
 }

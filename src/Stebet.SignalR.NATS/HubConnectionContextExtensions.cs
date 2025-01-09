@@ -29,16 +29,10 @@ internal static class HubConnectionContextExtensions
         }
     }
 
-    public static void SetConnectionHandler<THub>(this HubConnectionContext connection, NatsHubConnectionHandler<THub> handler) where THub : Hub
-    {
-        connection.Items["ConnectionHandler"] = handler;
-    }
+    public static void SetConnectionHandler<THub>(this HubConnectionContext connection, NatsHubConnectionHandler<THub> handler) where THub : Hub => connection.Items["ConnectionHandler"] = handler;
 
-    public static NatsHubConnectionHandler<THub> GetConnectionHandler<THub>(this HubConnectionContext connection) where THub : Hub
-    {
-        return (connection.Items.TryGetValue("ConnectionHandler", out object? handler) &&
+    public static NatsHubConnectionHandler<THub> GetConnectionHandler<THub>(this HubConnectionContext connection) where THub : Hub => (connection.Items.TryGetValue("ConnectionHandler", out object? handler) &&
                 handler is NatsHubConnectionHandler<THub> connectionHandler)
             ? connectionHandler
             : throw new InvalidOperationException("No ConnectionHandler set on the connection.");
-    }
 }
