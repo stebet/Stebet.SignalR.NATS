@@ -241,7 +241,7 @@ internal partial class NatsHubLifetimeManager<THub>(ILogger<NatsHubLifetimeManag
         {
             LoggerMessages.SetResultForRemoteConnection(logger, connectionId);
             var bufferWriter = new NatsBufferWriter<byte>();
-            bufferWriter.WriteMessageWithConnectionId(result, clientResultsManager.HubProtocols, connectionId);
+            bufferWriter.WriteCompletionMessageWithConnectionId(result, clientResultsManager.HubProtocols, connectionId);
             await _natsConnection.RequestAsync<NatsBufferWriter<byte>, bool>(NatsSubject.InvokeResultSubject, bufferWriter).ConfigureAwait(false);
         }
     }

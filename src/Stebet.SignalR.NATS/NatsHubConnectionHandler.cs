@@ -10,9 +10,9 @@ namespace Stebet.SignalR.NATS;
 
 internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionContext connection, INatsConnection natsConnection, ClientResultsManager<THub> resultsManager) where THub : Hub
 {
-    private readonly List<Task> _backgroundTasks = new();
-    private readonly List<INatsSub<NatsMemoryOwner<byte>>> _subs = new();
-    private readonly Dictionary<string, INatsSub<NatsMemoryOwner<byte>>> _groupSubs = new();
+    private readonly List<Task> _backgroundTasks = [];
+    private readonly List<INatsSub<NatsMemoryOwner<byte>>> _subs = [];
+    private readonly Dictionary<string, INatsSub<NatsMemoryOwner<byte>>> _groupSubs = [];
 
     public async Task StartConnectionHandler()
     {
@@ -179,7 +179,7 @@ internal class NatsHubConnectionHandler<THub>(ILogger logger, HubConnectionConte
         {
             LoggerMessages.SendInvocationResult(logger, message.ReplyTo!);
             var buffer = new NatsBufferWriter<byte>();
-            buffer.WriteMessageWithConnectionId(completionMessage, [connection.Protocol], connection.ConnectionId);
+            buffer.WriteCompletionMessageWithConnectionId(completionMessage, connection.Protocol, connection.ConnectionId);
             await message.ReplyAsync(buffer).ConfigureAwait(false);
         }
         ));

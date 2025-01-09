@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -11,8 +12,10 @@ namespace Microsoft.AspNetCore.SignalR;
 
 public static class ISignalRBuilderExtensions
 {
+    [RequiresUnreferencedCode("MessagePack does not support trimming currently.")]
     public static ISignalRServerBuilder AddNats(this ISignalRServerBuilder builder, string natsUrl, string natsSubjectPrefix = "signalr.nats")
     {
+        builder.AddMessagePackProtocol();
         NatsSubject.Prefix = natsSubjectPrefix;
         builder.Services.AddKeyedSingleton<INatsConnectionPool>("Stebet.SignalR.NATS", (provider, key) =>
         {

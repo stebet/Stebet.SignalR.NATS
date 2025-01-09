@@ -1,26 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-      <RootNamespace>Stebet.SignalR.NATS</RootNamespace>
-      <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-      <Authors>stebet</Authors>
-      <Description>Stebet.SignalR.NATS is a NuGet package the easily enables the use of NATS as a backplane for SignalR.</Description>
-      <PackageOutputPath>./nupkg</PackageOutputPath>
-      <PackageLicenseExpression>MIT</PackageLicenseExpression>
-      <PackageTags>NATS SignalR</PackageTags>
-      <PackageReadmeFile>README.md</PackageReadmeFile>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <InternalsVisibleTo Include="$(AssemblyName).Tests" />
-      <PackageReference Include="MessagePack" Version="2.5.168" />
-      <PackageReference Include="NATS.Net" Version="2.2.3" />
-    </ItemGroup>
-
+  <PropertyGroup>
+    <RootNamespace>Stebet.SignalR.NATS</RootNamespace>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <Authors>stebet</Authors>
+    <Description>Stebet.SignalR.NATS is a NuGet package the easily enables the use of NATS as a backplane for SignalR.</Description>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>NATS SignalR</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(AssemblyName).Tests" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" />
+    <PackageReference Include="NATS.Net" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
-  </Project>
+</Project>

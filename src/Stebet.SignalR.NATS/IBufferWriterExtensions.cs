@@ -15,7 +15,7 @@ public static class IBufferWriterExtensions
         writer.Flush();
     }
 
-    internal static void WriteMessageWithInvocationId(this IBufferWriter<byte> bufferWriter, HubMessage message, IReadOnlyList<IHubProtocol> protocols, string invocationId)
+    internal static void WriteMessageWithInvocationId(this IBufferWriter<byte> bufferWriter, InvocationMessage message, IReadOnlyList<IHubProtocol> protocols, string invocationId)
     {
         MessagePackWriter writer = new(bufferWriter);
         writer.Write(invocationId);
@@ -24,12 +24,25 @@ public static class IBufferWriterExtensions
         writer.Flush();
     }
 
-    internal static void WriteMessageWithConnectionId(this IBufferWriter<byte> bufferWriter, HubMessage message, IReadOnlyList<IHubProtocol> protocols, string connectionId)
+    internal static void WriteCompletionMessageWithConnectionId(this IBufferWriter<byte> bufferWriter, CompletionMessage message, IReadOnlyList<IHubProtocol> protocols, string connectionId)
     {
         MessagePackWriter writer = new(bufferWriter);
         writer.Write(connectionId);
         writer.Flush();
         bufferWriter.WriteMessage(message, protocols);
+        writer.Flush();
+    }
+
+    internal static void WriteCompletionMessageWithConnectionId(this IBufferWriter<byte> bufferWriter, CompletionMessage message, IHubProtocol protocol, string connectionId)
+    {
+        MessagePackWriter writer = new(bufferWriter);
+        writer.Write(connectionId);
+        writer.WriteArrayHeader(1);
+        using var tempBuffer = new NatsBufferWriter<byte>();
+        protocol.WriteMessage(message, tempBuffer);
+        writer.Write(protocol.Name);
+        writer.WriteBinHeader(tempBuffer.WrittenCount);
+        writer.WriteRaw(tempBuffer.WrittenMemory.Span);
         writer.Flush();
     }
 
@@ -50,7 +63,7 @@ public static class IBufferWriterExtensions
         writer.WriteArrayHeader(protocols.Count);
         foreach (var protocol in protocols)
         {
-            using NatsBufferWriter<byte> tempBuffer = new NatsBufferWriter<byte>();
+            using var tempBuffer = new NatsBufferWriter<byte>();
             protocol.WriteMessage(message, tempBuffer);
             writer.Write(protocol.Name);
             writer.WriteBinHeader(tempBuffer.WrittenCount);

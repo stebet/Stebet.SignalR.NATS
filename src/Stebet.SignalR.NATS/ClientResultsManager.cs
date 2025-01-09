@@ -21,7 +21,7 @@ internal sealed class ClientResultsManager<THub> : IInvocationBinder where THub 
         var hubProtocols = new List<IHubProtocol>(supportedProtocols.Count);
         foreach (string protocolName in supportedProtocols)
         {
-            IHubProtocol? protocol = hubProtocolResolver.GetProtocol(protocolName, (supportedProtocols as IReadOnlyList<string>) ?? supportedProtocols.ToList());
+            IHubProtocol? protocol = hubProtocolResolver.GetProtocol(protocolName, (supportedProtocols as IReadOnlyList<string>) ?? [.. supportedProtocols]);
             if (protocol != null)
             {
                 hubProtocols.Add(protocol);
