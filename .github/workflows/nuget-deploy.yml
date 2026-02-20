@@ -1,4 +1,6 @@
 name: Deploy Stebet.SignalR.NATS to NuGet
+permissions:
+  contents: read
 
 on:
   workflow_dispatch:
