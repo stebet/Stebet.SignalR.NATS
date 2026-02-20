@@ -4,7 +4,6 @@ permissions:
 
 on:
   workflow_dispatch:
-    branches: [ main ]
 
 jobs:
   build:
