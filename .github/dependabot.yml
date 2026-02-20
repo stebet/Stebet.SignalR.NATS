@@ -17,13 +17,6 @@ updates:
         patterns:
           - "NATS.*"
 
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "daily"
-      time: "07:00"
-      timezone: "Etc/UTC"
-
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
