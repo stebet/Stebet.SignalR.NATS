@@ -20,7 +20,14 @@ jobs:
     - name: Build
       run: dotnet build --no-restore /p:ContinuousIntegrationBuild=true
     - name: Test
-      run: dotnet test --no-build --collect:"XPlat Code Coverage" --settings Default.runsettings
+      run: dotnet test --no-build --collect:"XPlat Code Coverage" --settings Default.runsettings --logger trx --results-directory TestResults
+    - name: Publish Test Results
+      uses: dorny/test-reporter@v2
+      if: always()
+      with:
+        name: .NET Tests
+        path: TestResults/*.trx
+        reporter: dotnet-trx
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5
       with:
