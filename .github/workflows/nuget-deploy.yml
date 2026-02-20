@@ -31,20 +31,12 @@ jobs:
       env:
         VERPREF: ${{ format('{0}.{1}.{2}{3}', env.MajorVersion, env.MinorVersion, steps.date.outputs.date, github.run_number) }}
       run: echo "VersionPrefix=$(echo ${VERPREF})" >> $GITHUB_ENV
-    
-    - name: Setup .NET 9
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: 9.x
-        cache: true
-        cache-dependency-path: |
-          **/packages.lock.json
-    
+
     - name: Restore dependencies
-      run: dotnet restore --locked-mode
+      run: dotnet restore
 
     - name: Build Project
       run: dotnet pack ./src/Stebet.SignalR.NATS/Stebet.SignalR.NATS.csproj --configuration Release
 
     - name: Publish Nuget to GitHub registry
-      run: dotnet nuget push ./src/Stebet.SignalR.NATS/nupkg/*.nupkg -k ${{ secrets.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --skip-duplicate --no-symbols 
+      run: dotnet nuget push ./src/Stebet.SignalR.NATS/nupkg/*.nupkg -k ${{ secrets.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --skip-duplicate --no-symbols
