@@ -6,3 +6,27 @@ updates:
       interval: "daily"
       time: "07:00"
       timezone: "Etc/UTC"
+    groups:
+      microsoft-aspnetcore:
+        patterns:
+          - "Microsoft.AspNetCore.*"
+      xunit:
+        patterns:
+          - "xunit*"
+      nats:
+        patterns:
+          - "NATS.*"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "07:00"
+      timezone: "Etc/UTC"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "07:00"
+      timezone: "Etc/UTC"
