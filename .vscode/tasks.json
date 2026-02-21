@@ -1,0 +1,106 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-server-images",
+            "type": "shell",
+            "command": "dotnet publish perf/Stebet.SignalR.NATS.TestServer/Stebet.SignalR.NATS.TestServer.csproj /t:PublishContainer -p:ContainerRepository=stebet-signalr-nats-testserver -p:TargetFramework=net10.0 && dotnet publish perf/Stebet.SignalR.NATS.Yarp/Stebet.SignalR.NATS.Yarp.csproj /t:PublishContainer -p:ContainerRepository=stebet-signalr-nats-yarp -p:TargetFramework=net10.0",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build-load-test",
+            "type": "shell",
+            "command": "dotnet build perf/Stebet.SignalR.NATS.LoadTest/Stebet.SignalR.NATS.LoadTest.csproj -f net10.0",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build-load-test-release",
+            "type": "shell",
+            "command": "dotnet build perf/Stebet.SignalR.NATS.LoadTest/Stebet.SignalR.NATS.LoadTest.csproj -f net10.0 -c Release",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "docker-compose-nats-up",
+            "type": "shell",
+            "command": "docker compose -f docker-compose-nats.yml up -d",
+            "dependsOn": ["build-server-images"],
+            "dependsOrder": "sequence",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker-compose-redis-up",
+            "type": "shell",
+            "command": "docker compose -f docker-compose-redis.yml up -d",
+            "dependsOn": ["build-server-images"],
+            "dependsOrder": "sequence",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker-compose-nats-down",
+            "type": "shell",
+            "command": "docker compose -f docker-compose-nats.yml down",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker-compose-redis-down",
+            "type": "shell",
+            "command": "docker compose -f docker-compose-redis.yml down",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "prepare-load-test-nats",
+            "dependsOn": ["build-load-test", "docker-compose-nats-up"],
+            "dependsOrder": "parallel",
+            "problemMatcher": []
+        },
+        {
+            "label": "prepare-load-test-redis",
+            "dependsOn": ["build-load-test", "docker-compose-redis-up"],
+            "dependsOrder": "parallel",
+            "problemMatcher": []
+        },
+        {
+            "label": "prepare-load-test-nats-release",
+            "dependsOn": ["build-load-test-release", "docker-compose-nats-up"],
+            "dependsOrder": "parallel",
+            "problemMatcher": []
+        },
+        {
+            "label": "prepare-load-test-redis-release",
+            "dependsOn": ["build-load-test-release", "docker-compose-redis-up"],
+            "dependsOrder": "parallel",
+            "problemMatcher": []
+        }
+    ]
+}

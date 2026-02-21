@@ -1,0 +1,53 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Load Test (NATS)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "prepare-load-test-nats",
+            "postDebugTask": "docker-compose-nats-down",
+            "program": "${workspaceFolder}/perf/Stebet.SignalR.NATS.LoadTest/bin/Debug/net10.0/Stebet.SignalR.NATS.LoadTest.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/perf/Stebet.SignalR.NATS.LoadTest",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Load Test (Redis)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "prepare-load-test-redis",
+            "postDebugTask": "docker-compose-redis-down",
+            "program": "${workspaceFolder}/perf/Stebet.SignalR.NATS.LoadTest/bin/Debug/net10.0/Stebet.SignalR.NATS.LoadTest.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/perf/Stebet.SignalR.NATS.LoadTest",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Load Test Release (NATS)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "prepare-load-test-nats-release",
+            "postDebugTask": "docker-compose-nats-down",
+            "program": "${workspaceFolder}/perf/Stebet.SignalR.NATS.LoadTest/bin/Release/net10.0/Stebet.SignalR.NATS.LoadTest.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/perf/Stebet.SignalR.NATS.LoadTest",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Load Test Release (Redis)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "prepare-load-test-redis-release",
+            "postDebugTask": "docker-compose-redis-down",
+            "program": "${workspaceFolder}/perf/Stebet.SignalR.NATS.LoadTest/bin/Release/net10.0/Stebet.SignalR.NATS.LoadTest.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/perf/Stebet.SignalR.NATS.LoadTest",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        }
+    ]
+}
