@@ -25,7 +25,7 @@ jobs:
     - name: Test
       run: dotnet test --no-build --collect:"XPlat Code Coverage" --settings Default.runsettings --logger trx --results-directory TestResults
     - name: Publish Test Results
-      uses: dorny/test-reporter@v2
+      uses: dorny/test-reporter@v3
       if: always()
       with:
         name: .NET Tests
