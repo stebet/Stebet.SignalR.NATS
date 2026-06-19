@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
-    <PackageVersion Include="DotNet.ReproducibleBuilds.Isolated" Version="2.0.2" />
+    <PackageVersion Include="DotNet.ReproducibleBuilds.Isolated" Version="2.0.5" />
     <PackageVersion Include="MartinCostello.Logging.XUnit" Version="0.7.1" />
     <PackageVersion Include="MessagePack" Version="3.1.7" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
